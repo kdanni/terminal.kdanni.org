@@ -1,0 +1,31 @@
+{
+  "name": "@kdanni/terminal.kdanni.org",
+  "version": "1.0.0",
+  "description": "kdanni.org terminal",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dbinstall": "node index.js dbinstall",
+    "dev": "nodemon index.js",
+    "test": "node --test --test-reporter=spec test/**/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/kdanni/terminal.kdanni.org.git"
+  },
+  "keywords": [
+    "biz"
+  ],
+  "author": "kdanni",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kdanni/terminal.kdanni.org/issues"
+  },
+  "homepage": "https://github.com/kdanni/terminal.kdanni.org#readme",
+  "dependencies": {
+    "dotenv": "17.2.1",
+    "express": "5.1.0",
+    "mysql2": "3.14.3"
+  }
+}
