@@ -26,6 +26,7 @@
   "dependencies": {
     "dotenv": "17.2.1",
     "express": "5.1.0",
+    "got": "14.4.7",
     "mysql2": "3.14.3"
   }
 }
