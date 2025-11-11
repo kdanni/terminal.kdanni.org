@@ -1,0 +1,17 @@
+{
+  "name": "collector",
+  "version": "0.1.0",
+  "description": "Data ingestion service for terminal.kdanni.org",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "ts-node-esm src/index.ts",
+    "start:prod": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.2"
+  }
+}

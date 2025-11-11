@@ -1,0 +1,16 @@
+{
+  "name": "terminal-kdanni-org",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal Bloomberg-style terminal for financial time series aggregation and analysis.",
+  "workspaces": [
+    "collector"
+  ],
+  "scripts": {
+    "start:collector": "npm --workspace collector run start"
+  },
+  "engines": {
+    "node": ">=18.18.0",
+    "npm": ">=9"
+  }
+}
