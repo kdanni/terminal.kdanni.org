@@ -175,6 +175,17 @@ DO
 $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+    -- Enable the columnar extension when available so we can use
+    -- TimescaleDB's columnstore compression on the primary hypertable.
+    BEGIN
+      EXECUTE 'CREATE EXTENSION IF NOT EXISTS timescaledb_columnar';
+    EXCEPTION
+      WHEN undefined_file THEN
+        RAISE NOTICE 'timescaledb_columnar extension is not available; continuing without it.';
+      WHEN others THEN
+        RAISE NOTICE 'timescaledb_columnar extension could not be installed: %', SQLERRM;
+    END;
+
     PERFORM create_hypertable('price_series', by_range('ts'), if_not_exists => TRUE);
     PERFORM create_hypertable('fx_rates', by_range('ts'), if_not_exists => TRUE);
     PERFORM create_hypertable('econ_series', by_range('ts'), if_not_exists => TRUE);
@@ -188,6 +199,28 @@ DO
 $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+    -- Try to enable columnar compression for price_series when the
+    -- columnar extension is present. The notices make the migration
+    -- resilient on older images that might not yet bundle the feature.
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb_columnar') THEN
+      BEGIN
+        EXECUTE $columnar$
+          ALTER TABLE price_series
+          SET (
+            timescaledb.columnar = true,
+            timescaledb.compress = true,
+            timescaledb.compress_segmentby = 'security_id,interval,source_id',
+            timescaledb.compress_orderby = 'ts DESC'
+          )
+        $columnar$;
+      EXCEPTION
+        WHEN undefined_object OR invalid_parameter_value THEN
+          RAISE NOTICE 'Columnar compression settings could not be applied to price_series: %', SQLERRM;
+      END;
+    ELSE
+      RAISE NOTICE 'timescaledb_columnar extension not installed; price_series will remain row-store.';
+    END IF;
+
     EXECUTE $cagg$
       CREATE MATERIALIZED VIEW IF NOT EXISTS cagg_daily
       WITH (timescaledb.continuous) AS
