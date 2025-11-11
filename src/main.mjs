@@ -14,6 +14,18 @@ if (/^no[- ]operation\b/.test(commandString)) {
     tdStockList();
 } else if (/^forex[- ]?list\b/.test(commandString)) {
     tdForexList();
+} else if (/^commodities[- ]?list\b/.test(commandString)) {
+    tdCommoditiesList();
+} else if (/^crypto(currencies)?[- ]?list\b/.test(commandString)) {
+    tdCryptocurrenciesList();
+} else if (/^etf[- ]?list\b/.test(commandString)) {
+    tdEtfList();
+} else if (/^fixed[- ]?income[- ]?list\b/.test(commandString)) {
+    tdFixedIncomeList();
+} else if (/^bond[- ]?list\b/.test(commandString)) {
+    tdFixedIncomeList();
+} else if (/^fund[- ]?list\b/.test(commandString)) {
+    tdFundList();
 } else {
     main();
 }
@@ -41,6 +53,41 @@ async function tdStockList() {
 async function tdForexList() {
     const { getForexPairsList } = await import('./twelve-data/docs/forex-pairs-list.mjs');
     await getForexPairsList();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function tdCommoditiesList() {
+    const { getCommoditiesList } = await import('./twelve-data/docs/commodities-list.mjs');
+    await getCommoditiesList();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function tdCryptocurrenciesList() {
+    const { getCryptocurrenciesList } = await import('./twelve-data/docs/cryptocurrency-pairs.mjs');
+    await getCryptocurrenciesList();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function tdEtfList() {
+    const { getEtfList } = await import('./twelve-data/docs/etf-list.mjs');
+    await getEtfList();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function tdFixedIncomeList() {
+    const { getFixedIncomeList } = await import('./twelve-data/docs/fixedincome-list.mjs');
+    await getFixedIncomeList();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function tdFundList() {
+    const { getFundList } = await import('./twelve-data/docs/found-list.mjs');
+    await getFundList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }

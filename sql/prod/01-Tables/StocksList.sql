@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS stocks_list (
     cusip       VARCHAR(9),                     -- Committee on Uniform Securities Identification Procedures code
     access_global VARCHAR(16),                  -- Global access level (e.g. 'Level A')
     access_plan  VARCHAR(16),                   -- Access plan (e.g. 'Grow')
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation timestamp
+    updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- Update timestamp
     PRIMARY KEY (symbol, exchange)  -- Composite primary key on symbol and exchange
     , INDEX idx_stocks_list_symbol (symbol),
     INDEX idx_stocks_list_exchange (exchange),
@@ -54,3 +56,9 @@ CREATE TABLE IF NOT EXISTS stocks_list (
 -- CREATE INDEX idx_stocks_list_access_plan ON stocks_list (access_plan);
 -- CREATE INDEX idx_stocks_list_currency ON stocks_list (currency);
 -- CREATE INDEX idx_stocks_list_symbol_exchange ON stocks_list (symbol, exchange);
+
+
+-- - Alter stocks_list table to add new columns: created_at, updated_at
+-- ALTER TABLE stocks_list
+-- ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+-- ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;

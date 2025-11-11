@@ -17,6 +17,7 @@ CREATE PROCEDURE upsert_stock(
     IN p_access_plan VARCHAR(16)
 )
 BEGIN
+
     -- Use the mysql specific update on conflict single statement
     INSERT INTO stocks_list (
         symbol, name, currency, exchange, mic_code, country,

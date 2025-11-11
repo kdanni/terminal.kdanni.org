@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS forex_pairs_list (
     INDEX idx_currency_group (currency_group),
     INDEX idx_currency_base (currency_base),
     INDEX idx_currency_quote (currency_quote),
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation timestamp
+    updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- Update timestamp
     INDEX idx_base_quote (currency_base, currency_quote)
 ) COLLATE = utf8_hungarian_ci;
 
@@ -30,3 +32,8 @@ CREATE TABLE IF NOT EXISTS forex_pairs_list (
 -- CREATE INDEX idx_currency_quote ON forex_pairs_list (currency_quote);
 -- -- Index for faster lookups by base and quote currency
 -- CREATE INDEX idx_base_quote ON forex_pairs_list (currency_base, currency_quote);
+
+-- - Alter table forex_pairs_list to add new columns: created_at, updated_at
+-- ALTER TABLE forex_pairs_list
+-- ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+-- ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
