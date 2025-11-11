@@ -1,20 +1,24 @@
-import { closeDatabase, initializeSchema } from './database.js';
+import {
+  closeDatabase,
+  getDummyRecords,
+  initializeSchema,
+  insertDummyRecord,
+} from './database.js';
 
 const serviceName = 'terminal.kdanni.org collector';
 
 async function main(): Promise<void> {
   console.log(`[startup] ${serviceName} initialized`);
 
-  const { appliedMigrations } = await initializeSchema();
+  await initializeSchema();
 
-  if (appliedMigrations.length > 0) {
-    console.log('[database] applied migrations:');
-    for (const migration of appliedMigrations) {
-      console.log(` - ${migration}`);
-    }
-  } else {
-    console.log('[database] schema already up to date');
-  }
+  const label = `boot record @ ${new Date().toISOString()}`;
+  const insertedId = await insertDummyRecord(label);
+  console.log(`[database] inserted dummy record with id ${insertedId}`);
+
+  const records = await getDummyRecords();
+  console.log('[database] retrieved dummy records:');
+  console.table(records);
 }
 
 main()
