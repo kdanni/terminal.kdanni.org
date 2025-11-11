@@ -6,8 +6,11 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p .",
-    "start": "ts-node-esm src/index.ts",
+    "start": "npm run build && node dist/index.js",
     "start:prod": "node dist/index.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.5"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
