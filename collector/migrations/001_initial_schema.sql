@@ -202,6 +202,7 @@ BEGIN
       FROM price_series
       WHERE interval IN ('1m','5m','15m','1h')
       GROUP BY security_id, bucket
+      WITH NO DATA
     $cagg$;
 
     PERFORM add_continuous_aggregate_policy(
@@ -213,6 +214,7 @@ BEGIN
 
     PERFORM add_compression_policy('price_series', INTERVAL '7 days');
     PERFORM add_retention_policy('price_series', INTERVAL '2 years', schedule_interval => INTERVAL '1 day');
+
   ELSE
     RAISE NOTICE 'TimescaleDB not installed; skipping continuous aggregates and policies.';
     EXECUTE $cagg_simple$
@@ -228,10 +230,15 @@ BEGIN
       FROM price_series
       WHERE interval IN ('1m','5m','15m','1h')
       GROUP BY security_id, date_trunc('day', ts)
+      WITH NO DATA
     $cagg_simple$;
   END IF;
 END;
 $$;
+
+-- NOTE: Materialized views are created WITH NO DATA so this migration can run inside
+-- the surrounding transaction. Execute REFRESH MATERIALIZED VIEW commands separately
+-- after the migration if you need to backfill data immediately.
 
 CREATE OR REPLACE VIEW v_last_close AS
 SELECT DISTINCT ON (ps.security_id)
