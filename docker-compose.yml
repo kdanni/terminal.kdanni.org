@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: terminal-db
+    environment:
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: finance
+      POSTGRES_DB: market_data
+      TIMESCALEDB_TELEMETRY: "off"
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  collector:
+    build:
+      context: ./collector
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://finance:finance@db:5432/market_data
+    command: ["npm", "run", "start:prod"]
+
+volumes:
+  db-data:
