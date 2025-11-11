@@ -1,4 +1,5 @@
 import { closeDatabase, initializeSchema } from './database.js';
+import { collectReferenceDataAndSeries } from './ingest.js';
 
 const serviceName = 'terminal.kdanni.org collector';
 
@@ -14,6 +15,17 @@ async function main(): Promise<void> {
     }
   } else {
     console.log('[database] schema already up to date');
+  }
+
+  const ingestionReport = await collectReferenceDataAndSeries();
+  console.log(`[ingest] provider ${ingestionReport.providerCode}`);
+
+  for (const equity of ingestionReport.equities) {
+    console.log(` [equity] ${equity.symbol}: ${equity.rowsUpserted} rows upserted`);
+  }
+
+  for (const fx of ingestionReport.fx) {
+    console.log(` [fx] ${fx.pair}: ${fx.rowsUpserted} rows upserted`);
   }
 }
 

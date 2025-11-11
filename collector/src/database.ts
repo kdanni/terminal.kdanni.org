@@ -23,7 +23,7 @@ type PgClient = {
   query<T extends QueryResultRow = QueryResultRow>(
     text: string,
     params?: ReadonlyArray<unknown>
-  ): Promise<{ rows: T[] }>;
+  ): Promise<{ rows: T[]; rowCount: number }>;
   release(): void;
 };
 
@@ -31,7 +31,7 @@ type PgPool = {
   query<T extends QueryResultRow = QueryResultRow>(
     text: string,
     params?: ReadonlyArray<unknown>
-  ): Promise<{ rows: T[] }>;
+  ): Promise<{ rows: T[]; rowCount: number }>;
   connect(): Promise<PgClient>;
   end(): Promise<void>;
   on?: (event: 'error', listener: (error: Error) => void) => void;
@@ -79,6 +79,10 @@ async function getPool(): Promise<PgPool> {
   }
 
   return poolPromise;
+}
+
+export async function getDatabasePool(): Promise<PgPool> {
+  return getPool();
 }
 
 async function ensureMigrationsTable(pool: PgPool): Promise<void> {
