@@ -233,7 +233,7 @@ BEGIN
 END;
 $$;
 
-CREATE VIEW IF NOT EXISTS v_last_close AS
+CREATE OR REPLACE VIEW v_last_close AS
 SELECT DISTINCT ON (ps.security_id)
   ps.security_id,
   ps.ts,
