@@ -11,6 +11,7 @@ This document defines the relational/time-series schema for the personal-market-
 - Symbols are resolved via a **symbol registry** to a canonical `security_id`.
 - All OHLCV numeric fields use `numeric(18,8)` unless noted.
 - Text enums use check constraints for portability.
+- Application code calls **stored upsert procedures** for any write that could update existing rows; inline SQL in services is limited to simple selects or procedure invocations.
 
 ---
 
@@ -29,6 +30,22 @@ econ_series (hypertable) ← macro series catalog
 ---
 
 ## Reference Tables
+
+### Upsert Stored Procedures
+
+To keep inline SQL in application services simple, every table that supports mutation from the collector exposes an explicit upsert procedure defined alongside the table migration:
+
+| Table | Stored Procedure |
+| --- | --- |
+| `exchanges` | `upsert_exchange(code, name, country, timezone, mic)` |
+| `currencies` | `upsert_currency(code, name, decimals)` |
+| `providers` | `upsert_provider(code, name, base_url)` |
+| `securities` | `upsert_security(exchange_id, symbol, name, currency_code, type)` |
+| `symbols` | `upsert_symbol(security_id, provider_id, provider_sym)` |
+| `price_series` | `upsert_price_series(security_id, ts, interval, open, high, low, close, volume, source_id)` |
+| `fx_rates` | `upsert_fx_rate(base_ccy, quote_ccy, ts, rate, source_id)` |
+
+Each procedure relies on a corresponding primary key or unique constraint so that PostgreSQL can resolve `ON CONFLICT` targets deterministically.
 
 ### `exchanges`
 Metadata for trading venues.
@@ -240,7 +257,7 @@ CREATE TABLE ingest_runs (
 
 CREATE INDEX ix_ingest_runs_recent ON ingest_runs (started_at DESC);
 ```
-To ensure idempotent upserts in price_series, use `INSERT ... ON CONFLICT DO UPDATE` on the composite PK `(security_id, ts, interval, source_id)`.
+To keep ingestion idempotent without relying on complex inline SQL, application code first issues an `UPDATE` targeting the composite primary key `(security_id, ts, interval, source_id)` via a row comparison and only falls back to `INSERT` when no row matches. This mirrors an upsert while staying within the "simple query" requirement for the TypeScript collector.
 
 # Access Control (minimal)
 ```sql
@@ -328,21 +345,25 @@ JOIN fx ON date_trunc('day', px.ts) = fx.ts
 ORDER BY ts;
 ```
 
-Upsert example for ingestion
+Manual upsert pattern for ingestion
 ```
+-- Step 1: try to update the existing row keyed by the composite PK
+UPDATE price_series
+SET open = $1,
+    high = $2,
+    low = $3,
+    close = $4,
+    volume = $5,
+    ingest_ts = now()
+WHERE (security_id, ts, interval, source_id) = ($6, $7, '1d', $8);
+
+-- Step 2: insert when the UPDATE above affects zero rows
 INSERT INTO price_series
-(security_id, ts, interval, open, high, low, close, volume, source_id, ingest_ts)
+  (security_id, ts, interval, open, high, low, close, volume, source_id)
 VALUES
-  ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
-ON CONFLICT (security_id, ts, interval, source_id)
-DO UPDATE SET
-  open   = EXCLUDED.open,
-  high   = EXCLUDED.high,
-  low    = EXCLUDED.low,
-  close  = EXCLUDED.close,
-  volume = EXCLUDED.volume,
-  ingest_ts = now();
+  ($6, $7, '1d', $1, $2, $3, $4, $5, $8);
 ```
+> **Note:** PostgreSQL resolves conflicts using declared unique constraints (including primary keys). If you ever reintroduce `ON CONFLICT`, make sure the target columns are protected by an actual unique index so the database can identify the conflicting row.
 
 # Maintenance & Policies
 ## Vacuum/Analyze

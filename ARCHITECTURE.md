@@ -28,6 +28,7 @@ Fetch raw market data from multiple public/free-tier APIs and standardize it int
   }
   ```
 - Providers configured via YAML files: config/providers/*.yaml.
+- Database writes go through stored upsert procedures (e.g., `upsert_price_series`) so that TypeScript only issues simple `SELECT procedure(...)` calls and more complex `ON CONFLICT` logic lives in SQL.
 
 ### 2. Storage Layer
 **Purpose:**  
