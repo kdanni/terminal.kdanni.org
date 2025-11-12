@@ -39,7 +39,7 @@ type PgPool = {
 
 type QueryResultRow = Record<string, unknown>;
 
-type Migration = {
+export type Migration = {
   id: number;
   name: string;
   filename: string;
@@ -95,7 +95,7 @@ async function ensureMigrationsTable(pool: PgPool): Promise<void> {
   `);
 }
 
-function parseMigrationFilename(filename: string): Migration | null {
+function parseMigrationFilename(filename: string, directory: string): Migration | null {
   const match = filename.match(/^(\d{3,})_(.+)\.sql$/);
 
   if (!match) {
@@ -113,15 +113,15 @@ function parseMigrationFilename(filename: string): Migration | null {
     id,
     name: namePart.replace(/_/g, ' '),
     filename,
-    fullPath: path.join(MIGRATIONS_DIRECTORY, filename),
+    fullPath: path.join(directory, filename),
   };
 }
 
-async function loadMigrations(): Promise<Migration[]> {
+async function loadMigrations(directory: string = MIGRATIONS_DIRECTORY): Promise<Migration[]> {
   let entries: string[];
 
   try {
-    entries = await fs.readdir(MIGRATIONS_DIRECTORY);
+    entries = await fs.readdir(directory);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return [];
@@ -131,7 +131,7 @@ async function loadMigrations(): Promise<Migration[]> {
 
   const migrations = entries
     .filter((entry) => entry.endsWith('.sql'))
-    .map((entry) => parseMigrationFilename(entry))
+    .map((entry) => parseMigrationFilename(entry, directory))
     .filter((value): value is Migration => value !== null)
     .sort((a, b) => a.id - b.id);
 
@@ -198,6 +198,12 @@ export async function initializeSchema(): Promise<SchemaInitializationResult> {
 
   return { appliedMigrations };
 }
+
+export const __testing = {
+  parseMigrationFilename: (filename: string, directory: string = MIGRATIONS_DIRECTORY) =>
+    parseMigrationFilename(filename, directory),
+  loadMigrations,
+};
 
 export async function closeDatabase(): Promise<void> {
   if (isPoolClosed) {

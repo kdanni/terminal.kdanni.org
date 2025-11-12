@@ -170,35 +170,13 @@ CREATE INDEX ix_price_series_interval
 
 ### Compression & Retention
 ```sql
--- Enable compression after 7 days; adjust policy windows per interval
-ALTER TABLE price_series SET (timescaledb.compress, timescaledb.compress_segmentby = 'security_id,interval,source_id');
-
+-- Migrations automatically apply compression and retention policies when
+-- TimescaleDB is available. Adjust the policy windows here if applying
+-- manually outside of the managed migrations.
 SELECT add_compression_policy('price_series', INTERVAL '7 days');
 
--- Example retention: drop raw sub-daily data older than 2 years
-SELECT add_retention_policy('price_series', INTERVAL '2 years', 
+SELECT add_retention_policy('price_series', INTERVAL '2 years',
   schedule_interval => INTERVAL '1 day');
-```
-### Continuous Aggregates (canonical daily from intraday)
-```sql
-CREATE MATERIALIZED VIEW cagg_daily
-WITH (timescaledb.continuous) AS
-SELECT
-  security_id,
-  time_bucket('1 day', ts) AS bucket,
-  first(open, ts)  AS open,
-  max(high)        AS high,
-  min(low)         AS low,
-  last(close, ts)  AS close,
-  sum(volume)      AS volume
-FROM price_series
-WHERE interval IN ('1m','5m','15m','1h')     -- tune to your ingest
-GROUP BY security_id, bucket;
-
-SELECT add_continuous_aggregate_policy('cagg_daily',
-  start_offset => INTERVAL '30 days',
-  end_offset   => INTERVAL '1 hour',
-  schedule_interval => INTERVAL '15 minutes');
 ```
 
 ## `fx_rates` (Spot FX)
@@ -244,64 +222,6 @@ SELECT create_hypertable('econ_series', by_range('ts'), if_not_exists => true);
 CREATE INDEX ix_econ_series_lookup ON econ_series (series_id, ts DESC);
 ```
 
-# Views & Derived Layers
-## `v_last_close`
-Latest close per security (by `ts`) for a preferred source and interval.
-```sql
-CREATE VIEW v_last_close AS
-SELECT DISTINCT ON (ps.security_id)
-  ps.security_id,
-  ps.ts,
-  ps.close,
-  ps.volume,
-  ps.interval,
-  ps.source_id
-FROM price_series ps
-WHERE ps.interval = '1d'
-ORDER BY ps.security_id, ps.ts DESC;
-```
-
-## `v_adjusted_daily`
-Price adjustment using splits/dividends (simple backward adjustment example).
-```sql
--- Example assumes a precomputed adjustment factor per date; for production,
--- materialize factors or use a procedure to compute them incrementally.
-CREATE MATERIALIZED VIEW v_adjusted_daily AS
-WITH daily AS (
-  SELECT security_id, bucket AS ts, open, high, low, close, volume
-  FROM cagg_daily
-),
-factors AS (
-  SELECT
-    ca.security_id,
-    (ca.action_date)::timestamptz AS ts,
-    CASE WHEN kind='split' AND factor_num IS NOT NULL AND factor_den IS NOT NULL
-         THEN (factor_den / factor_num)        -- e.g., 2-for-1 -> 0.5 factor
-         ELSE 1.0 END AS split_factor
-  FROM corporate_actions ca
-),
-cum AS (
-  SELECT d.security_id, d.ts,
-         COALESCE(EXP(SUM(LN(f.split_factor)) OVER (
-           PARTITION BY d.security_id
-           ORDER BY d.ts
-           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)), 1.0) AS adj_factor
-  FROM daily d
-  LEFT JOIN factors f
-    ON f.security_id = d.security_id AND f.ts <= d.ts
-)
-SELECT
-  d.security_id,
-  d.ts,
-  d.open  * c.adj_factor AS open_adj,
-  d.high  * c.adj_factor AS high_adj,
-  d.low   * c.adj_factor AS low_adj,
-  d.close * c.adj_factor AS close_adj,
-  d.volume / NULLIF(c.adj_factor,0) AS volume_adj
-FROM daily d
-JOIN cum c USING (security_id, ts);
-```
-
 # Ingestion Metadata & Idempotency
 ## `ingest_runs`
 Track batch jobs for observability and replay.
@@ -341,52 +261,71 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO analyst;
 # Example Queries
 Fetch daily OHLCV for a symbol and date range
 ```sql
-SELECT s.symbol, d.*
-FROM cagg_daily d
-JOIN securities s ON s.id = d.security_id
+SELECT s.symbol,
+       ps.ts,
+       ps.open,
+       ps.high,
+       ps.low,
+       ps.close,
+       ps.volume
+FROM price_series ps
+JOIN securities s ON s.id = ps.security_id
 WHERE s.symbol = 'AAPL'
-  AND d.bucket >= '2024-01-01'::date
-  AND d.bucket <  '2025-01-01'::date
-ORDER BY d.bucket;
+  AND ps.interval = '1d'
+  AND ps.ts >= '2024-01-01'::date
+  AND ps.ts <  '2025-01-01'::date
+ORDER BY ps.ts;
 ```
 
 Latest close across watchlist
-```
-SELECT s.symbol, v.ts, v.close
-FROM v_last_close v
-JOIN securities s ON s.id = v.security_id
-WHERE s.symbol = ANY(ARRAY['AAPL','MSFT','NVDA']);
+```sql
+SELECT DISTINCT ON (ps.security_id)
+  s.symbol,
+  ps.ts,
+  ps.close
+FROM price_series ps
+JOIN securities s ON s.id = ps.security_id
+WHERE s.symbol = ANY(ARRAY['AAPL','MSFT','NVDA'])
+  AND ps.interval = '1d'
+ORDER BY ps.security_id, ps.ts DESC;
 ```
 
-Compute 20-day SMA from daily aggregate
+Compute 20-day SMA from daily prices
 ```sql
 SELECT
-  security_id,
-  bucket AS ts,
-  AVG(close) OVER (PARTITION BY security_id ORDER BY bucket
-                   ROWS BETWEEN 19 PRECEDING AND CURRENT ROW) AS sma20
-FROM cagg_daily
-WHERE security_id = (SELECT id FROM securities WHERE symbol='AAPL')
-ORDER BY ts;
+  ps.security_id,
+  ps.ts,
+  AVG(ps.close) OVER (
+    PARTITION BY ps.security_id
+    ORDER BY ps.ts
+    ROWS BETWEEN 19 PRECEDING AND CURRENT ROW
+  ) AS sma20
+FROM price_series ps
+WHERE ps.security_id = (SELECT id FROM securities WHERE symbol='AAPL')
+  AND ps.interval = '1d'
+ORDER BY ps.ts;
 ```
 
 Normalize prices to base currency via FX
 ```sql
 WITH px AS (
-  SELECT bucket AS ts, close, security_id
-  FROM cagg_daily
-  WHERE security_id = (SELECT id FROM securities WHERE symbol='SAP') -- EUR
+  SELECT ps.ts, ps.close
+  FROM price_series ps
+  WHERE ps.security_id = (SELECT id FROM securities WHERE symbol='SAP') -- EUR
+    AND ps.interval = '1d'
 ),
 fx AS (
-  SELECT time_bucket('1 day', ts) AS ts, last(rate, ts) AS eur_usd
+  SELECT date_trunc('day', ts) AS ts,
+         last(rate, ts) AS eur_usd
   FROM fx_rates
-  WHERE base_ccy='EUR' AND quote_ccy='USD'
+  WHERE base_ccy = 'EUR' AND quote_ccy = 'USD'
   GROUP BY 1
 )
-SELECT px.ts, px.close * fx.eur_usd AS close_usd
+SELECT date_trunc('day', px.ts) AS ts,
+       px.close * fx.eur_usd AS close_usd
 FROM px
-JOIN fx USING (ts)
-ORDER BY px.ts;
+JOIN fx ON date_trunc('day', px.ts) = fx.ts
+ORDER BY ts;
 ```
 
 Upsert example for ingestion

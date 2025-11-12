@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc -p .",
     "start": "npm run build && node dist/index.js",
-    "start:prod": "node dist/index.js"
+    "start:prod": "node dist/index.js",
+    "test": "node --loader ts-node/esm --test test/database.test.ts"
   },
   "dependencies": {
     "pg": "^8.11.5"
