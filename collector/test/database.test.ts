@@ -45,7 +45,7 @@ describe('loadMigrations', () => {
     await fs.writeFile(path.join(tmp, '001_first.sql'), '-- first');
     await fs.writeFile(path.join(tmp, 'notes.txt'), 'ignore');
 
-    const migrations = await __testing.loadMigrations(tmp);
+    const migrations = await __testing.loadMigrations({ directory: tmp, kind: 'persistent' });
 
     assert.deepStrictEqual(
       migrations.map((migration) => migration.filename),
@@ -54,17 +54,23 @@ describe('loadMigrations', () => {
   });
 
   it('loads repository migrations without duplicates', async () => {
-    const migrations = await __testing.loadMigrations();
-    const ids = migrations.map((migration) => migration.id);
+    const persistentMigrations = await __testing.loadMigrations({ kind: 'persistent' });
+    const persistentIds = persistentMigrations.map((migration) => migration.id);
 
-    assert.ok(migrations.length > 0, 'expected at least one migration');
-    assert.strictEqual(new Set(ids).size, ids.length);
+    assert.ok(persistentMigrations.length > 0, 'expected at least one persistent migration');
+    assert.strictEqual(new Set(persistentIds).size, persistentIds.length);
+
+    const replaceableMigrations = await __testing.loadMigrations({ kind: 'replaceable' });
+    const replaceableIds = replaceableMigrations.map((migration) => migration.id);
+
+    assert.ok(replaceableMigrations.length > 0, 'expected at least one replaceable migration');
+    assert.strictEqual(new Set(replaceableIds).size, replaceableIds.length);
   });
 });
 
 describe('schema hygiene', () => {
   it('contains no view or materialized view definitions', async () => {
-    const migrations = await __testing.loadMigrations();
+    const migrations = await __testing.loadMigrations({ kind: 'persistent' });
 
     for (const migration of migrations) {
       const contents = await fs.readFile(migration.fullPath, 'utf8');
