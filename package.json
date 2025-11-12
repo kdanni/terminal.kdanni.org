@@ -7,7 +7,8 @@
     "collector"
   ],
   "scripts": {
-    "start:collector": "npm --workspace collector run start"
+    "start:collector": "npm --workspace collector run start",
+    "test": "npm --workspace collector run test"
   },
   "engines": {
     "node": ">=18.18.0",
