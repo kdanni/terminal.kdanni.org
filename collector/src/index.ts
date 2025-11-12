@@ -5,6 +5,8 @@ const serviceName = 'terminal.kdanni.org collector';
 
 async function main(): Promise<void> {
   console.log(`[startup] ${serviceName} initialized`);
+  // Wait for environment start up.
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
   const { appliedMigrations, refreshedObjects } = await initializeSchema();
 
