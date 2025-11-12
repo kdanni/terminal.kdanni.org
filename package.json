@@ -8,7 +8,9 @@
   ],
   "scripts": {
     "start:collector": "npm --workspace collector run start",
-    "test": "npm --workspace collector run test"
+    "test": "npm --workspace collector run test",
+    "db:migrate": "docker compose run --rm flyway migrate",
+    "db:info": "docker compose run --rm flyway info"
   },
   "engines": {
     "node": ">=18.18.0",

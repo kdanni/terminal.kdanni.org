@@ -13,6 +13,14 @@ This document defines the relational/time-series schema for the personal-market-
 - Text enums use check constraints for portability.
 - Application code calls **stored upsert procedures** for any write that could update existing rows; inline SQL in services is limited to simple selects or procedure invocations.
 
+## Migration Management (Flyway)
+
+- Schema changes are versioned with [Flyway](https://flywaydb.org/) using pure SQL migrations.
+- Versioned migrations live in [`flyway/sql`](flyway/sql) and follow the `V#` naming convention.
+- Repeatable migrations (`R__*.sql`) capture stored procedures and other replaceable database objects.
+- Local development runs migrations through Docker Compose: `npm run db:migrate` (applies) and `npm run db:info` (inspect state).
+- The Flyway container reads configuration from [`flyway/conf/flyway.conf`](flyway/conf/flyway.conf); connection credentials are provided via environment variables or [`config/database`](config/database).
+
 ---
 
 ## Entity Overview
