@@ -23,5 +23,19 @@ services:
       DATABASE_URL: postgres://finance:finance@db:5432/market_data
     command: ["npm", "run", "start:prod"]
 
+  flyway:
+    image: flyway/flyway:10
+    depends_on:
+      - db
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5432/market_data
+      FLYWAY_USER: finance
+      FLYWAY_PASSWORD: finance
+      FLYWAY_DEFAULT_SCHEMA: public
+    command: ["-configFiles=/flyway/conf/flyway.conf"]
+    volumes:
+      - ./flyway/sql:/flyway/sql:ro
+      - ./flyway/conf:/flyway/conf:ro
+
 volumes:
   db-data:
