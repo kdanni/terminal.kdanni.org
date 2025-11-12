@@ -6,7 +6,7 @@ const serviceName = 'terminal.kdanni.org collector';
 async function main(): Promise<void> {
   console.log(`[startup] ${serviceName} initialized`);
 
-  const { appliedMigrations } = await initializeSchema();
+  const { appliedMigrations, refreshedObjects } = await initializeSchema();
 
   if (appliedMigrations.length > 0) {
     console.log('[database] applied migrations:');
@@ -15,6 +15,13 @@ async function main(): Promise<void> {
     }
   } else {
     console.log('[database] schema already up to date');
+  }
+
+  if (refreshedObjects.length > 0) {
+    console.log('[database] refreshed replaceable objects:');
+    for (const object of refreshedObjects) {
+      console.log(` - ${object}`);
+    }
   }
 
   const ingestionReport = await collectReferenceDataAndSeries();

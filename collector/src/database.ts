@@ -12,6 +12,13 @@ const MIGRATIONS_DIRECTORY = path.resolve(
   fileURLToPath(new URL('../migrations', import.meta.url))
 );
 
+type MigrationKind = 'persistent' | 'replaceable';
+
+const MIGRATION_KIND_DIRECTORIES: Record<MigrationKind, string> = {
+  persistent: path.join(MIGRATIONS_DIRECTORY, 'persistent'),
+  replaceable: path.join(MIGRATIONS_DIRECTORY, 'replaceable'),
+};
+
 type PgModule = {
   Pool?: new (config: { connectionString?: string }) => PgPool;
   default?: {
@@ -48,6 +55,7 @@ export type Migration = {
 
 export interface SchemaInitializationResult {
   appliedMigrations: string[];
+  refreshedObjects: string[];
 }
 
 let poolPromise: Promise<PgPool> | null = null;
@@ -117,11 +125,20 @@ function parseMigrationFilename(filename: string, directory: string): Migration 
   };
 }
 
-async function loadMigrations(directory: string = MIGRATIONS_DIRECTORY): Promise<Migration[]> {
+interface LoadMigrationsOptions {
+  kind: MigrationKind;
+  directory?: string;
+}
+
+async function loadMigrations({
+  kind,
+  directory,
+}: LoadMigrationsOptions): Promise<Migration[]> {
+  const baseDirectory = directory ?? MIGRATION_KIND_DIRECTORIES[kind];
   let entries: string[];
 
   try {
-    entries = await fs.readdir(directory);
+    entries = await fs.readdir(baseDirectory);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return [];
@@ -131,7 +148,7 @@ async function loadMigrations(directory: string = MIGRATIONS_DIRECTORY): Promise
 
   const migrations = entries
     .filter((entry) => entry.endsWith('.sql'))
-    .map((entry) => parseMigrationFilename(entry, directory))
+    .map((entry) => parseMigrationFilename(entry, baseDirectory))
     .filter((value): value is Migration => value !== null)
     .sort((a, b) => a.id - b.id);
 
@@ -146,6 +163,11 @@ async function loadMigrations(directory: string = MIGRATIONS_DIRECTORY): Promise
   return migrations;
 }
 
+async function executeMigrationSql(client: PgClient, migration: Migration): Promise<void> {
+  const sql = await fs.readFile(migration.fullPath, 'utf8');
+  await client.query(sql);
+}
+
 async function hasMigration(client: PgClient, id: number): Promise<boolean> {
   const result = await client.query<{ exists: boolean }>(
     `SELECT EXISTS (SELECT 1 FROM ${MIGRATIONS_TABLE} WHERE id = $1) AS exists`,
@@ -156,8 +178,7 @@ async function hasMigration(client: PgClient, id: number): Promise<boolean> {
 }
 
 async function applyMigration(client: PgClient, migration: Migration): Promise<void> {
-  const sql = await fs.readFile(migration.fullPath, 'utf8');
-  await client.query(sql);
+  await executeMigrationSql(client, migration);
   await client.query(
     `INSERT INTO ${MIGRATIONS_TABLE} (id, name) VALUES ($1, $2)`,
     [migration.id, migration.name]
@@ -168,10 +189,12 @@ export async function initializeSchema(): Promise<SchemaInitializationResult> {
   const pool = await getPool();
   await ensureMigrationsTable(pool);
 
-  const migrations = await loadMigrations();
+  const persistentMigrations = await loadMigrations({ kind: 'persistent' });
+  const replaceableMigrations = await loadMigrations({ kind: 'replaceable' });
   const appliedMigrations: string[] = [];
+  const refreshedObjects: string[] = [];
 
-  for (const migration of migrations) {
+  for (const migration of persistentMigrations) {
     const client = await pool.connect();
 
     try {
@@ -196,7 +219,23 @@ export async function initializeSchema(): Promise<SchemaInitializationResult> {
     }
   }
 
-  return { appliedMigrations };
+  for (const migration of replaceableMigrations) {
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+      await executeMigrationSql(client, migration);
+      await client.query('COMMIT');
+      refreshedObjects.push(migration.filename);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  return { appliedMigrations, refreshedObjects };
 }
 
 export const __testing = {
