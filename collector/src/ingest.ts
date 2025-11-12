@@ -133,10 +133,7 @@ async function fetchStooqSeries(symbol: string): Promise<StooqRow[]> {
 
 async function ensureProvider(pool: DatabasePool): Promise<number> {
   const result = await pool.query<{ id: number }>(
-    `INSERT INTO providers (code, name, base_url)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, base_url = EXCLUDED.base_url
-     RETURNING id`,
+    'SELECT upsert_provider($1, $2, $3) AS id',
     [STOOQ_PROVIDER.code, STOOQ_PROVIDER.name, STOOQ_PROVIDER.baseUrl]
   );
 
@@ -145,22 +142,24 @@ async function ensureProvider(pool: DatabasePool): Promise<number> {
 
 async function ensureCurrencies(pool: DatabasePool): Promise<void> {
   for (const currency of CURRENCIES) {
-    await pool.query(
-      `INSERT INTO currencies (code, name, decimals)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, decimals = EXCLUDED.decimals`,
-      [currency.code, currency.name, currency.decimals]
-    );
+    await pool.query('SELECT upsert_currency($1, $2, $3)', [
+      currency.code,
+      currency.name,
+      currency.decimals,
+    ]);
   }
 }
 
 async function ensureExchange(pool: DatabasePool): Promise<number> {
   const result = await pool.query<{ id: number }>(
-    `INSERT INTO exchanges (code, name, country, timezone, mic)
-     VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, country = EXCLUDED.country, timezone = EXCLUDED.timezone, mic = EXCLUDED.mic
-     RETURNING id`,
-    [DEFAULT_EXCHANGE.code, DEFAULT_EXCHANGE.name, DEFAULT_EXCHANGE.country, DEFAULT_EXCHANGE.timezone, DEFAULT_EXCHANGE.mic]
+    'SELECT upsert_exchange($1, $2, $3, $4, $5) AS id',
+    [
+      DEFAULT_EXCHANGE.code,
+      DEFAULT_EXCHANGE.name,
+      DEFAULT_EXCHANGE.country,
+      DEFAULT_EXCHANGE.timezone,
+      DEFAULT_EXCHANGE.mic,
+    ]
   );
 
   return result.rows[0]?.id as number;
@@ -171,14 +170,8 @@ async function ensureSecurity(
   params: EquityWatch & { exchangeId: number }
 ): Promise<number> {
   const result = await pool.query<{ id: number }>(
-    `INSERT INTO securities (symbol, name, exchange_id, currency_code, type)
-     VALUES ($1, $2, $3, $4, 'equity')
-     ON CONFLICT (exchange_id, symbol) DO UPDATE SET
-       name = EXCLUDED.name,
-       currency_code = EXCLUDED.currency_code,
-       type = EXCLUDED.type
-     RETURNING id`,
-    [params.symbol, params.name, params.exchangeId, params.currencyCode]
+    "SELECT upsert_security($1, $2, $3, $4, 'equity') AS id",
+    [params.exchangeId, params.symbol, params.name, params.currencyCode]
   );
 
   return result.rows[0]?.id as number;
@@ -190,12 +183,7 @@ async function ensureSymbol(
   providerId: number,
   providerSymbol: string
 ): Promise<void> {
-  await pool.query(
-    `INSERT INTO symbols (security_id, provider_id, provider_sym)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (provider_id, provider_sym) DO UPDATE SET security_id = EXCLUDED.security_id`,
-    [securityId, providerId, providerSymbol]
-  );
+  await pool.query('SELECT upsert_symbol($1, $2, $3)', [securityId, providerId, providerSymbol]);
 }
 
 async function upsertPriceSeries(
@@ -210,41 +198,28 @@ async function upsertPriceSeries(
     return 0;
   }
 
-  const values: string[] = [];
-  const params: unknown[] = [];
-  let paramIndex = 1;
+  let affectedRows = 0;
 
   for (const row of validRows) {
-    const placeholders = Array.from({ length: 9 }, (_, offset) => `$${paramIndex + offset}`);
-    paramIndex += placeholders.length;
-
-    values.push(`(${placeholders.join(', ')})`);
-    params.push(
-      securityId,
-      row.ts,
-      '1d',
-      row.open,
-      row.high,
-      row.low,
-      row.close,
-      row.volume,
-      providerId
+    const result = await pool.query<{ affected: number }>(
+      'SELECT upsert_price_series($1, $2, $3, $4, $5, $6, $7, $8, $9) AS affected',
+      [
+        securityId,
+        row.ts,
+        '1d',
+        row.open,
+        row.high,
+        row.low,
+        row.close,
+        row.volume,
+        providerId,
+      ]
     );
+
+    affectedRows += result.rows[0]?.affected ?? 0;
   }
 
-  const result = await pool.query(
-    `INSERT INTO price_series (security_id, ts, interval, open, high, low, close, volume, source_id)
-     VALUES ${values.join(', ')}
-     ON CONFLICT (security_id, ts, interval, source_id) DO UPDATE SET
-       open = EXCLUDED.open,
-       high = EXCLUDED.high,
-       low = EXCLUDED.low,
-       close = EXCLUDED.close,
-       volume = EXCLUDED.volume,
-       ingest_ts = NOW()`
-  , params);
-
-  return result.rowCount ?? 0;
+  return affectedRows;
 }
 
 async function upsertFxSeries(
@@ -259,27 +234,18 @@ async function upsertFxSeries(
     return 0;
   }
 
-  const values: string[] = [];
-  const params: unknown[] = [];
-  let paramIndex = 1;
+  let affectedRows = 0;
 
   for (const row of validRows) {
-    const placeholders = Array.from({ length: 5 }, (_, offset) => `$${paramIndex + offset}`);
-    paramIndex += placeholders.length;
+    const result = await pool.query<{ affected: number }>(
+      'SELECT upsert_fx_rate($1, $2, $3, $4, $5) AS affected',
+      [watch.baseCurrency, watch.quoteCurrency, row.ts, row.close, providerId]
+    );
 
-    values.push(`(${placeholders.join(', ')})`);
-    params.push(watch.baseCurrency, watch.quoteCurrency, row.ts, row.close, providerId);
+    affectedRows += result.rows[0]?.affected ?? 0;
   }
 
-  const result = await pool.query(
-    `INSERT INTO fx_rates (base_ccy, quote_ccy, ts, rate, source_id)
-     VALUES ${values.join(', ')}
-     ON CONFLICT (base_ccy, quote_ccy, ts, source_id) DO UPDATE SET
-       rate = EXCLUDED.rate,
-       ingest_ts = NOW()`
-  , params);
-
-  return result.rowCount ?? 0;
+  return affectedRows;
 }
 
 export async function collectReferenceDataAndSeries(): Promise<IngestionReport> {
