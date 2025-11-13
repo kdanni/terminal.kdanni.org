@@ -11,8 +11,8 @@ CREATE PROCEDURE upsert_stock(
     IN p_type VARCHAR(32),
     IN p_figi_code VARCHAR(12),
     IN p_cfi_code VARCHAR(6),
-    IN p_isin VARCHAR(12),
-    IN p_cusip VARCHAR(9),
+    IN p_isin VARCHAR(82),
+    IN p_cusip VARCHAR(82),
     IN p_access_global VARCHAR(16),
     IN p_access_plan VARCHAR(16)
 )

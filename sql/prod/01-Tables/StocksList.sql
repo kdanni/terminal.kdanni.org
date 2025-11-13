@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS stocks_list (
     type        VARCHAR(32),                    -- Type of asset (e.g. 'Common Stock')
     figi_code   VARCHAR(12),                    -- Financial Instrument Global Identifier
     cfi_code    VARCHAR(6),                     -- Classification of Financial Instruments code
-    isin        VARCHAR(12),                    -- International Securities Identification Number
-    cusip       VARCHAR(9),                     -- Committee on Uniform Securities Identification Procedures code
+    isin        VARCHAR(82),                    -- International Securities Identification Number
+    cusip       VARCHAR(82),                     -- Committee on Uniform Securities Identification Procedures code
     access_global VARCHAR(16),                  -- Global access level (e.g. 'Level A')
     access_plan  VARCHAR(16),                   -- Access plan (e.g. 'Grow')
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation timestamp
