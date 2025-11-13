@@ -44,49 +44,49 @@ async function main() {
 }
 
 async function tdStockList() {
-    const { getStockList } = await import('./twelve-data/docs/stock-list.mjs');
+    const { getStockList } = await import('./twelve-data/asset-catalogs/stock-list.mjs');
     await getStockList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
 
 async function tdForexList() {
-    const { getForexPairsList } = await import('./twelve-data/docs/forex-pairs-list.mjs');
+    const { getForexPairsList } = await import('./twelve-data/asset-catalogs/forex-pairs-list.mjs');
     await getForexPairsList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
 
 async function tdCommoditiesList() {
-    const { getCommoditiesList } = await import('./twelve-data/docs/commodities-list.mjs');
+    const { getCommoditiesList } = await import('./twelve-data/asset-catalogs/commodities-list.mjs');
     await getCommoditiesList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
 
 async function tdCryptocurrenciesList() {
-    const { getCryptocurrenciesList } = await import('./twelve-data/docs/cryptocurrency-pairs.mjs');
+    const { getCryptocurrenciesList } = await import('./twelve-data/asset-catalogs/cryptocurrency-pairs.mjs');
     await getCryptocurrenciesList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
 
 async function tdEtfList() {
-    const { getEtfList } = await import('./twelve-data/docs/etf-list.mjs');
+    const { getEtfList } = await import('./twelve-data/asset-catalogs/etf-list.mjs');
     await getEtfList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
 
 async function tdFixedIncomeList() {
-    const { getFixedIncomeList } = await import('./twelve-data/docs/fixedincome-list.mjs');
+    const { getFixedIncomeList } = await import('./twelve-data/asset-catalogs/fixedincome-list.mjs');
     await getFixedIncomeList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
 
 async function tdFundList() {
-    const { getFundList } = await import('./twelve-data/docs/found-list.mjs');
+    const { getFundList } = await import('./twelve-data/asset-catalogs/found-list.mjs');
     await getFundList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
