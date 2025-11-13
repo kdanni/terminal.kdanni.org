@@ -15,7 +15,7 @@ const sqlDir = fileURLToPath(pathToFileURL(`${metaUrlPath}${sep}..${sep}..${sep}
 //         multipleStatements: true,
 //     })
 // };
-import { multipleStatementConnection } from './connection/connection.mjs';
+import { multipleStatementConnection } from './connection.mjs';
 let connection;
 
 setTimeout(async () => {

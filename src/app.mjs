@@ -27,6 +27,7 @@ function exitHandler(options, exitCode) {
     if (options.exit) process.exit(exitCode);
 }
 process.on('exit_event', exitHandler.bind(null,{exit:true}, 0));
+process.on('exit_event_1', exitHandler.bind(null,{exit:true}, 1));
 //catches ctrl+c event
 process.on('SIGINT', exitHandler.bind(null, {exit:true}, 0));
 // catches "kill pid" (for example: nodemon restart)
