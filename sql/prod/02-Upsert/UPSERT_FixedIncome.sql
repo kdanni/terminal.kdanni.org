@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS upsert_fixed_income;
 
 CREATE PROCEDURE upsert_fixed_income(
     IN p_symbol VARCHAR(16),
-    IN p_name VARCHAR(255),
+    IN p_name VARCHAR(512),
     IN p_country VARCHAR(100),
     IN p_currency VARCHAR(10),
     IN p_exchange VARCHAR(50),

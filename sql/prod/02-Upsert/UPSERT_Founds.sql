@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS upsert_fund;
 
 CREATE PROCEDURE upsert_fund (
     IN p_symbol VARCHAR(10),
-    IN p_name VARCHAR(100),
+    IN p_name VARCHAR(512),
     IN p_country VARCHAR(50),
     IN p_currency VARCHAR(10),
     IN p_exchange VARCHAR(50),
@@ -12,8 +12,8 @@ CREATE PROCEDURE upsert_fund (
     IN p_type VARCHAR(50),
     IN p_figi_code VARCHAR(12),
     IN p_cfi_code VARCHAR(6),
-    IN p_isin VARCHAR(12),
-    IN p_cusip VARCHAR(9),
+    IN p_isin VARCHAR(255),
+    IN p_cusip VARCHAR(255),
     IN p_access_global VARCHAR(20),
     IN p_access_plan VARCHAR(20)
 )

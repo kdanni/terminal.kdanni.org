@@ -18,7 +18,7 @@
 
 CREATE TABLE IF NOT EXISTS funds (
     symbol VARCHAR(10) PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(512) NOT NULL,
     country VARCHAR(50) NOT NULL,
     currency VARCHAR(10) NOT NULL,
     exchange VARCHAR(50) NOT NULL,
@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS funds (
     type VARCHAR(50) NOT NULL,
     figi_code VARCHAR(12) NOT NULL,
     cfi_code VARCHAR(6) NOT NULL,
-    isin VARCHAR(12) NOT NULL,
-    cusip VARCHAR(9) NOT NULL,
+    isin VARCHAR(255) NOT NULL,
+    cusip VARCHAR(255) NOT NULL,
     access_global VARCHAR(20) NOT NULL,
     access_plan VARCHAR(20) NOT NULL,
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation timestamp

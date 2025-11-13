@@ -21,7 +21,7 @@
 -- SQL table for storing stock metadata
 CREATE TABLE IF NOT EXISTS stocks_list (
     symbol      VARCHAR(32)    NOT NULL,        -- Asset identifier (e.g. ticker)
-    name        VARCHAR(128)   NOT NULL,        -- Full name of the asset
+    name        VARCHAR(512)   NOT NULL,        -- Full name of the asset
     currency    VARCHAR(8)     NOT NULL,        -- Currency code (e.g. 'USD')
     exchange    VARCHAR(32)    NOT NULL,        -- Exchange name (required for composite key) mic_code    VARCHAR(12),                    -- Market Identifier Code (optional)
     mic_code    VARCHAR(12),                    -- Market Identifier Code (optional)
@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS stocks_list (
     type        VARCHAR(32),                    -- Type of asset (e.g. 'Common Stock')
     figi_code   VARCHAR(12),                    -- Financial Instrument Global Identifier
     cfi_code    VARCHAR(6),                     -- Classification of Financial Instruments code
-    isin        VARCHAR(82),                    -- International Securities Identification Number
-    cusip       VARCHAR(82),                     -- Committee on Uniform Securities Identification Procedures code
+    isin        VARCHAR(255),                   -- International Securities Identification Number
+    cusip       VARCHAR(255),                   -- Committee on Uniform Securities Identification Procedures code
     access_global VARCHAR(16),                  -- Global access level (e.g. 'Level A')
     access_plan  VARCHAR(16),                   -- Access plan (e.g. 'Grow')
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation timestamp
