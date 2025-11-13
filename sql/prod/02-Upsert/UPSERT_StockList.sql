@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS upsert_stock;
 -- UPSERT sp for inserting or updating stock metadata
 CREATE PROCEDURE upsert_stock(
     IN p_symbol VARCHAR(32),
-    IN p_name VARCHAR(128),
+    IN p_name VARCHAR(512),
     IN p_currency VARCHAR(8),
     IN p_exchange VARCHAR(32),
     IN p_mic_code VARCHAR(12),
@@ -11,8 +11,8 @@ CREATE PROCEDURE upsert_stock(
     IN p_type VARCHAR(32),
     IN p_figi_code VARCHAR(12),
     IN p_cfi_code VARCHAR(6),
-    IN p_isin VARCHAR(82),
-    IN p_cusip VARCHAR(82),
+    IN p_isin VARCHAR(255),
+    IN p_cusip VARCHAR(255),
     IN p_access_global VARCHAR(16),
     IN p_access_plan VARCHAR(16)
 )

@@ -10,7 +10,7 @@ DROP PROCEDURE IF EXISTS upsert_commodities;
 
 CREATE PROCEDURE upsert_commodities(
     IN p_symbol VARCHAR(10),
-    IN p_name VARCHAR(100),
+    IN p_name VARCHAR(512),
     IN p_category VARCHAR(50),
     IN p_description TEXT
 )

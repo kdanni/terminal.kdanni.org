@@ -14,7 +14,7 @@
 
 CREATE TABLE IF NOT EXISTS fixed_income (
     symbol VARCHAR(16) PRIMARY KEY,
-    name VARCHAR(255),
+    name VARCHAR(512),
     country VARCHAR(100),
     currency VARCHAR(10),
     exchange VARCHAR(50),

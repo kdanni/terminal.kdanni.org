@@ -7,7 +7,7 @@
 
 CREATE TABLE IF NOT EXISTS commodities (
     symbol VARCHAR(10) PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(512) NOT NULL,
     category VARCHAR(50) NOT NULL,
     description TEXT,
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation timestamp
