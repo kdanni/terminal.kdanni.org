@@ -21,7 +21,8 @@ A modular, service-oriented platform for collecting, normalizing, and serving fi
 ├── test                 # unit tests (TODO)
 ├── CONTEXT.md           # Project background and goals
 ├── package.json         # Workspace metadata and shared scripts
-└── docker-compose.yml   # Container orchestration scaffold (TODO)
+├── Dockerfile           # Container image definition
+└── docker-compose.yml   # Container orchestration for app + databases
 ```
 
 
@@ -45,4 +46,8 @@ A modular, service-oriented platform for collecting, normalizing, and serving fi
    ```bash
    npm run start <command line parameters>
    ```
+
+## Docker Support
+
+To build and run the application in a containerized environment, see [Docker.md](./Docker.md) for detailed instructions.
 
