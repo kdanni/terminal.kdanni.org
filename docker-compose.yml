@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    depends_on:
+      - mysql
+      - timescale
+    environment:
+      NODE_ENV: development
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_USER: terminal
+      MYSQL_PASSWORD: terminal-password
+      DATABASE_NAME: terminal
+      TIMESCALE_HOST: timescale
+      TIMESCALE_PORT: "5432"
+      TIMESCALE_USER: timescale
+      TIMESCALE_PASSWORD: timescale-password
+      TIMESCALE_DATABASE: timescale
+    ports:
+      - "3000:3000"
+
+  mysql:
+    image: mysql:8.3
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root-password
+      MYSQL_DATABASE: terminal
+      MYSQL_USER: terminal
+      MYSQL_PASSWORD: terminal-password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  timescale:
+    image: timescale/timescaledb:2.15.2-pg15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: timescale
+      POSTGRES_USER: timescale
+      POSTGRES_PASSWORD: timescale-password
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+
+volumes:
+  mysql-data:
+  timescale-data:
