@@ -1,0 +1,34 @@
+# Project Roadmap
+
+## Purpose
+This roadmap summarizes the immediate priorities and staged initiatives for terminal.kdanni.org based on the current project documentation. It focuses on enabling a reliable development environment, completing foundational data infrastructure, and preparing the application layer for production workloads.
+
+## Phase 1 – Development Environment Enablement
+1. **Provision containerized databases**: Create a `docker-compose.yaml` for local development that runs both the MySQL master-data database image and the PostgreSQL + TimescaleDB time-series image, including persistent volumes, environment variables, and initialized networks.
+2. **Document environment bootstrap**: Extend `README.md` with steps for starting the compose stack, seeding schemas, and stopping services.
+3. **Automate schema application**: Wire the existing `npm run dbinstall` flow to run inside the containers and document how to apply Timescale scripts.
+
+## Phase 2 – Data Layer Hardening
+1. **Validate SQL migration idempotency**: Review the scripts under `sql/prod` and add guards/tests to ensure repeatable runs, as mandated by the architecture guidelines.
+2. **Integrate Timescale schema management**: Introduce tooling to manage the `sql/timescale` scripts (e.g., npm task or migration runner) and ensure it aligns with the dual-database layout.
+3. **Establish seed data process**: Define representative datasets and scripts for populating both databases to support local development and automated tests.
+
+## Phase 3 – Service Layer Completion
+1. **Finalize DB install task**: Complete the implementation under `src/db-install/` to cover all schema layers, including error handling and logging.
+2. **Implement Twelve Data ingestion tasks**: Build out the collectors referenced in the architecture document, including scheduling, API credential management, and event logging via `src/event-emitter.mjs`.
+3. **Add monitoring hooks**: Ensure ingestion and install tasks emit structured events consumable by `src/log/event-logger.mjs`.
+
+## Phase 4 – API & Presentation Readiness
+1. **Harden Express service**: Implement the REST API routes in `src/api/`, including validation, pagination, and security headers per best practices.
+2. **Introduce integration tests**: Expand the placeholder `test/` directory with coverage for core API flows and database interactions, leveraging a test compose stack.
+3. **Document operational playbooks**: Produce runbooks for common operational scenarios (deployments, rollbacks, data restores) building on `docs/TESTPLAN.md`.
+
+## Phase 5 – Observability & Deployment
+1. **Add logging and metrics pipeline**: Standardize log formats and integrate metrics exporters for both Node services and databases.
+2. **Define CI/CD pipeline**: Configure automation for linting, testing, image builds, and deployment packaging.
+3. **Plan production infrastructure**: Document target hosting, networking, and backup strategies aligned with the modular architecture.
+
+## Continuous Activities
+- **Documentation upkeep**: Keep architecture, schema, and test plan documents synchronized with implementation changes.
+- **Security review**: Periodically review dependencies and credentials, ensuring `.env` handling matches best practices.
+- **Feedback loop**: Revisit and reprioritize roadmap items based on stakeholder feedback and observed system performance.
