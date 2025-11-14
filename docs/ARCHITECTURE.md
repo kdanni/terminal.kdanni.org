@@ -48,6 +48,8 @@ Vanilla javascript files. ES modules implemented in `.mjs` files.
  - Note: `sql/timescale/` directory is not managed
 -**Twelve Data tasks**
  - Collects data from Twelve Data
+ - Twelve Data only used to keep update Asset Catalog.
+   - Free tier limits wont be exhausted with the limited scope
 
 ### Always on applications
 - **API backend service**
