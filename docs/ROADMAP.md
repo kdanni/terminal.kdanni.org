@@ -17,13 +17,13 @@ This roadmap summarizes the immediate priorities and staged initiatives for term
 1. **Finalize DB install task**: Complete the implementation under `src/db-install/` to cover all schema layers, including error handling and logging.
 2. **Implement Twelve Data ingestion tasks**: Build out the collectors 
 
-## Phase 3 b - Service Layer for Exchange Catalog
-1. **Find API otions query Exchange informaton**: Free tier API provide information about exchanges.
-2. **Create Exchange Catalog DB layer**
- - Create Master Data TABLE for Exchangeinfo and related entities if any.
- - Create Upsert SP.
-3. **Initialize the domain logic**: `src/<provider>/exchange-catalog`
-4. **Implement Exchange Catalog ingestion tasks**
+## Phase 3b – Service Layer for Exchange Catalog
+1. **Evaluate exchange metadata APIs**: Identify free-tier providers that supply reliable exchange reference data, documenting rate limits and required credentials.
+2. **Create Exchange Catalog database layer**:
+   - Define master data tables for exchange information and any related lookup entities.
+   - Implement idempotent stored procedures or scripts to upsert catalog entries.
+3. **Initialize domain logic**: Stand up a provider-specific module under `src/<provider>/exchange-catalog` that encapsulates fetch, transform, and validation routines.
+4. **Implement Exchange Catalog ingestion tasks**: Build schedulable workers that persist fetched exchange data via the new database layer and surface operational metrics.
 
 
 ## Phase 4 – API & Presentation Readiness
