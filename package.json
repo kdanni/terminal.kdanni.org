@@ -13,6 +13,7 @@
     "seed:timescale": "node index.js seed:timescale",
     "seed:all": "node index.js seed:all",
     "twd:asset-catalog": "node index.js twd:asset-catalog",
+    "twd:exchange-catalog": "node index.js twd:exchange-catalog",
     "dev": "nodemon index.js",
     "test": "node --test --test-reporter=spec test/**/*.test.js"
   },
