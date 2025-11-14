@@ -1,10 +1,10 @@
 import got from 'got';
 import { pool } from '../../mysql/mysql2-env-connection.mjs';
-
-const TWELVE_DATA_API_KEY = process.env.TWELVE_DATA_API_KEY || 'demo';
+import { withTwelveDataApiKey } from '../api-key.mjs';
 
 export async function getFixedIncomeList() {
-    const response = await got(`https://api.twelvedata.com/bonds?apikey=${TWELVE_DATA_API_KEY}`);
+    const requestUrl = withTwelveDataApiKey('https://api.twelvedata.com/bonds');
+    const response = await got(requestUrl);
 
     let jsonData;
 
