@@ -12,7 +12,7 @@ if (/^no[- ]operation\b/.test(commandString)) {
     dbinstall();
 } else if (/^db[- ]?verify\b/.test(commandString)) {
     dbverify();
-} else if (/^timescale[- ]?migrate\b/.test(commandString)) {
+} else if (/^timescale(?::|[- ])?migrate\b/.test(commandString)) {
     timescaleMigrate();
 } else if (/^seed(?::|[- ])?mysql\b/.test(commandString)) {
     seedMysql();
