@@ -8,10 +8,10 @@ This roadmap summarizes the immediate priorities and staged initiatives for term
 2. **Document environment bootstrap**: Extend `README.md` with steps for starting the compose stack, seeding schemas, and stopping services.
 3. **Automate schema application**: Wire the existing `npm run dbinstall` flow to run inside the containers and document how to apply Timescale scripts.
 
-## Phase 2 – Data Layer Hardening
-1. **Validate SQL migration idempotency**: Review the scripts under `sql/prod` and add guards/tests to ensure repeatable runs, as mandated by the architecture guidelines.
-2. **Integrate Timescale schema management**: Introduce tooling to manage the `sql/timescale` scripts (e.g., npm task or migration runner) and ensure it aligns with the dual-database layout.
-3. **Establish seed data process**: Define representative datasets and scripts for populating both databases to support local development and automated tests.
+## Phase 2 – Data Layer Hardening ✅ Completed
+1. **Validate SQL migration idempotency**: Added a disposable-database verification flow (`npm run db:verify`) that replays the production scripts twice and enforces `IF NOT EXISTS` coverage in the Timescale schema.
+2. **Integrate Timescale schema management**: Introduced a Postgres/Timescale runner (`npm run timescale:migrate`) built on the shared SQL file tooling so Timescale migrations can execute alongside MySQL installs.
+3. **Establish seed data process**: Created reusable seeding scripts for both databases (`npm run seed:mysql`, `npm run seed:timescale`, and `npm run seed:all`) stocked with anonymized canonical datasets and documented in the contributor guides.
 
 ## Phase 3 – Service Layer Completion
 1. **Finalize DB install task**: Complete the implementation under `src/db-install/` to cover all schema layers, including error handling and logging.

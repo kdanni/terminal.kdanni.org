@@ -41,11 +41,36 @@ A modular, service-oriented platform for collecting, normalizing, and serving fi
    npm run dbinstall
    ```
 
-3. **Run task**
+3. **Verify migration idempotency (optional but recommended)**
+
+   ```bash
+   npm run db:verify
+   ```
+
+4. **Apply Timescale schema**
+
+   ```bash
+   npm run timescale:migrate
+   ```
+
+5. **Seed reference & sample market data**
+
+   ```bash
+   npm run seed:all
+   ```
+
+6. **Run task**
 
    ```bash
    npm run start <command line parameters>
    ```
+
+The seeding helpers can be invoked independently if you only need one database populated:
+
+```bash
+npm run seed:mysql
+npm run seed:timescale
+```
 
 ## Docker Support
 
