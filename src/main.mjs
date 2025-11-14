@@ -1,4 +1,5 @@
 import { ingestTwelveDataAssetCatalogs } from './main/twd-asset-catalog.mjs';
+import { ingestTwelveDataExchangeCatalog } from './main/twd-exchange-catalog.mjs';
 
 let commandString = '';
 if (process.argv.length > 2) {
@@ -40,6 +41,8 @@ if (/^no[- ]operation\b/.test(commandString)) {
     tdFundList();
 } else if (/^twd(?::|[- ])?asset(?::|[- ])?catalogs?\b/.test(commandString)) {
     twdAssetCatalog();
+} else if (/^twd(?::|[- ])?exchange(?::|[- ])?catalogs?\b/.test(commandString)) {
+    twdExchangeCatalog();
 } else {
     main();
 }
@@ -144,6 +147,12 @@ async function tdFundList() {
 
 async function twdAssetCatalog() {
     await ingestTwelveDataAssetCatalogs();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function twdExchangeCatalog() {
+    await ingestTwelveDataExchangeCatalog();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
