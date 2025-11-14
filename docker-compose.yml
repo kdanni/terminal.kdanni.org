@@ -11,11 +11,11 @@ services:
       MYSQL_USER: terminal
       MYSQL_PASSWORD: terminal-password
       DATABASE_NAME: terminal
-      TIMESCALE_HOST: timescale
-      TIMESCALE_PORT: "5432"
-      TIMESCALE_USER: timescale
-      TIMESCALE_PASSWORD: timescale-password
-      TIMESCALE_DATABASE: timescale
+      POSTGRES_HOST: timescale
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: timescale
+      POSTGRES_PASSWORD: timescale-password
+      POSTGRES_DB: timescale
     ports:
       - "3000:3000"
 
