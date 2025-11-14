@@ -13,3 +13,8 @@
  - `"test": "node --test --test-reporter=spec test/**/*.test.js"`
  - prefered built in node test capabilities
  - test should be under `test/domain-folders/`
+
+## Database verification & fixtures
+- `npm run db:verify` spins up a scratch MySQL database, replays the production migrations twice, and drops the instance to guarantee idempotency.
+- `npm run timescale:migrate` applies TimescaleDB schema changes so integration tests have hypertables available.
+- `npm run seed:all` hydrates both databases with anonymized canonical datasets (with `npm run seed:mysql` and `npm run seed:timescale` available for targeted loads).

@@ -7,6 +7,11 @@
   "scripts": {
     "start": "node index.js",
     "dbinstall": "node index.js dbinstall",
+    "db:verify": "node index.js dbverify",
+    "timescale:migrate": "node index.js timescale:migrate",
+    "seed:mysql": "node index.js seed:mysql",
+    "seed:timescale": "node index.js seed:timescale",
+    "seed:all": "node index.js seed:all",
     "dev": "nodemon index.js",
     "test": "node --test --test-reporter=spec test/**/*.test.js"
   },
@@ -27,6 +32,8 @@
     "dotenv": "17.2.1",
     "express": "5.1.0",
     "got": "14.4.7",
-    "mysql2": "3.14.3"
+    "mysql2": "3.14.3",
+    "pg": "8.11.5",
+    "pg-promise": "11.6.0"
   }
 }

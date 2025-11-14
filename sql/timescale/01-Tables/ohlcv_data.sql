@@ -1,4 +1,4 @@
-CREATE TABLE ohlcv_data (
+CREATE TABLE IF NOT EXISTS ohlcv_data (
     symbol      VARCHAR(32)    NOT NULL,        -- Asset identifier (e.g. ticker)
     exchange    VARCHAR(32),                    -- Exchange name (optional)
     interval    VARCHAR(16)    NOT NULL,        -- Bar interval (e.g. '1d', '1m')
@@ -12,4 +12,4 @@ CREATE TABLE ohlcv_data (
 );
 
 -- Convert to hypertable for TimescaleDB
-SELECT create_hypertable('ohlcv_data', 'time');
+SELECT create_hypertable('ohlcv_data', 'time', if_not_exists => TRUE);

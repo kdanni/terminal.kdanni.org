@@ -10,6 +10,16 @@ if (/^no[- ]operation\b/.test(commandString)) {
     process.exit(0);
 } else if (/^db[- ]?install\b/.test(commandString)) {
     dbinstall();
+} else if (/^db[- ]?verify\b/.test(commandString)) {
+    dbverify();
+} else if (/^timescale[- ]?migrate\b/.test(commandString)) {
+    timescaleMigrate();
+} else if (/^seed(?::|[- ])?mysql\b/.test(commandString)) {
+    seedMysql();
+} else if (/^seed(?::|[- ])?timescale\b/.test(commandString)) {
+    seedTimescale();
+} else if (/^seed(?::|[- ])?all\b/.test(commandString)) {
+    seedAll();
 } else if (/^stock[- ]?list\b/.test(commandString)) {
     tdStockList();
 } else if (/^forex[- ]?list\b/.test(commandString)) {
@@ -32,7 +42,43 @@ if (/^no[- ]operation\b/.test(commandString)) {
 
 
 async function dbinstall() {
-    await import('./db-install/db-install.mjs');
+    const { runProdInstall } = await import('./db-install/db-install.mjs');
+    await runProdInstall();
+    setTimeout(async () => { process.emit('exit_event'); }, 1000);
+}
+
+async function dbverify() {
+    const { verifyProdIdempotency } = await import('./db-install/verify-idempotency.mjs');
+    await verifyProdIdempotency();
+    setTimeout(async () => { process.emit('exit_event'); }, 1000);
+}
+
+async function timescaleMigrate() {
+    const { runTimescaleMigrations } = await import('./postgres/timescale-migrate.mjs');
+    await runTimescaleMigrations();
+    setTimeout(async () => { process.emit('exit_event'); }, 1000);
+}
+
+async function seedMysql(emitExit = true) {
+    const { seedMysqlDatabase } = await import('./seeds/mysql-seed.mjs');
+    await seedMysqlDatabase();
+    if (emitExit) {
+        setTimeout(async () => { process.emit('exit_event'); }, 1000);
+    }
+}
+
+async function seedTimescale(emitExit = true) {
+    const { seedTimescaleDatabase } = await import('./seeds/timescale-seed.mjs');
+    await seedTimescaleDatabase();
+    if (emitExit) {
+        setTimeout(async () => { process.emit('exit_event'); }, 1000);
+    }
+}
+
+async function seedAll() {
+    await seedMysql(false);
+    await seedTimescale(false);
+    setTimeout(async () => { process.emit('exit_event'); }, 1000);
 }
 
 async function main() {

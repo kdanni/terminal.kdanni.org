@@ -3,23 +3,19 @@ import { dirname, join } from 'node:path';
 
 import { collectSqlFiles } from '../sql/file-utils.mjs';
 import { runSqlFiles } from '../sql/mysql-runner.mjs';
-import { multipleStatementConnection } from './connection.mjs';
+import { multipleStatementConnection } from '../db-install/connection.mjs';
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
-const prodSqlDir = join(moduleDir, '..', '..', 'sql', 'prod');
+const seedSqlDir = join(moduleDir, '..', '..', 'sql', 'seeds', 'mysql');
 
-export async function runProdInstall() {
+export async function seedMysqlDatabase() {
   const connection = await multipleStatementConnection();
   try {
-    const files = await collectSqlFiles(prodSqlDir);
-    console.log(`[db:install] Executing ${files.length} SQL files`);
+    const files = await collectSqlFiles(seedSqlDir);
+    console.log(`[seed:mysql] Executing ${files.length} SQL files`);
     await runSqlFiles(connection, files);
-    console.log('[db:install] Completed without errors');
+    console.log('[seed:mysql] Completed successfully');
   } finally {
     await connection.end();
   }
-}
-
-export function getProdSqlDir() {
-  return prodSqlDir;
 }
