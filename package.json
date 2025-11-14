@@ -12,6 +12,7 @@
     "seed:mysql": "node index.js seed:mysql",
     "seed:timescale": "node index.js seed:timescale",
     "seed:all": "node index.js seed:all",
+    "twd:asset-catalog": "node index.js twd:asset-catalog",
     "dev": "nodemon index.js",
     "test": "node --test --test-reporter=spec test/**/*.test.js"
   },

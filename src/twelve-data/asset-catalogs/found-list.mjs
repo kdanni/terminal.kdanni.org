@@ -1,9 +1,11 @@
 import got from 'got';
 import { pool } from '../../mysql/mysql2-env-connection.mjs';
+import { withTwelveDataApiKey } from '../api-key.mjs';
 
 
 export async function getFundList() {
-    const response = await got('https://api.twelvedata.com/funds?apikey=demo&source=docs');
+    const requestUrl = withTwelveDataApiKey('https://api.twelvedata.com/funds', { source: 'docs' });
+    const response = await got(requestUrl);
 
     let jsonData;
 

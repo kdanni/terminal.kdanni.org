@@ -1,3 +1,5 @@
+import { ingestTwelveDataAssetCatalogs } from './main/twd-asset-catalog.mjs';
+
 let commandString = '';
 if (process.argv.length > 2) {
     for (let i = 2; i < process.argv.length; i++) {
@@ -36,6 +38,8 @@ if (/^no[- ]operation\b/.test(commandString)) {
     tdFixedIncomeList();
 } else if (/^fund[- ]?list\b/.test(commandString)) {
     tdFundList();
+} else if (/^twd(?::|[- ])?asset(?::|[- ])?catalogs?\b/.test(commandString)) {
+    twdAssetCatalog();
 } else {
     main();
 }
@@ -134,6 +138,12 @@ async function tdFixedIncomeList() {
 async function tdFundList() {
     const { getFundList } = await import('./twelve-data/asset-catalogs/found-list.mjs');
     await getFundList();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function twdAssetCatalog() {
+    await ingestTwelveDataAssetCatalogs();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
