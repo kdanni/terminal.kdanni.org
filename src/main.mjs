@@ -42,6 +42,8 @@ if (/^no[- ]operation\b/.test(commandString)) {
     tdFundList();
 } else if (/^ping[- ]?ranking\b/.test(commandString)) {
     pingRankingSignals();
+} else if (/^ranking(?::|[- ])?collect(?::|[- ])?exchanges?\b/.test(commandString)) {
+    collectExchangeRankingSignalsCommand();
 } else if (/^twd(?::|[- ])?asset(?::|[- ])?catalogs?\b/.test(commandString)) {
     twdAssetCatalog();
 } else if (/^twd(?::|[- ])?exchange(?::|[- ])?catalogs?\b/.test(commandString)) {
@@ -193,6 +195,14 @@ async function pingRankingSignals(params) {
     await clients.pingCoinGecko();
     await clients.pingCoinMarketCap();
     // await clients.pingKaiko();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function collectExchangeRankingSignalsCommand() {
+    const { collectExchangeRankingSignals } = await import('./ranking-signals/index.mjs');
+
+    await collectExchangeRankingSignals();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
