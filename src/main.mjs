@@ -43,6 +43,8 @@ if (/^no[- ]operation\b/.test(commandString)) {
     twdAssetCatalog();
 } else if (/^twd(?::|[- ])?exchange(?::|[- ])?catalogs?\b/.test(commandString)) {
     twdExchangeCatalog();
+} else if (/^watch(?::|[- ])?list(?::|[- ])?sync\b/.test(commandString)) {
+    watchListSync();
 } else {
     main();
 }
@@ -153,6 +155,13 @@ async function twdAssetCatalog() {
 
 async function twdExchangeCatalog() {
     await ingestTwelveDataExchangeCatalog();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function watchListSync() {
+    const { syncWatchLists } = await import('./watch-list/sync.mjs');
+    await syncWatchLists();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
