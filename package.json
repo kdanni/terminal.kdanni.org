@@ -17,6 +17,7 @@
     "watch-list:sync": "node index.js watch-list:sync",
     "ohlc:collect:daily": "node index.js ohlc:collect:daily",
     "ohlc:collect:hourly": "node index.js ohlc:collect:hourly",
+    "rank:exchange": "node index.js ranking:collect:exchanges",
     "dev": "nodemon index.js",
     "test": "node --test --test-reporter=spec test/**/*.test.js"
   },
