@@ -76,3 +76,10 @@ npm run seed:timescale
 
 To build and run the application in a containerized environment, see [Docker.md](./Docker.md) for detailed instructions.
 
+## Configuration
+
+The API enforces an allow-list based CORS policy. Configure permitted origins with environment variables:
+
+- `CORS_ALLOW_ORIGINS` – comma-separated list of origins authorized for production requests (credentials are allowed).
+- `CORS_DEV_ORIGINS` – optional comma-separated list of origins for local development. When provided, requests from these origins are allowed without credentials.
+
