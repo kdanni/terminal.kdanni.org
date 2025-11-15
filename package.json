@@ -15,6 +15,8 @@
     "twd:asset-catalog": "node index.js twd:asset-catalog",
     "twd:exchange-catalog": "node index.js twd:exchange-catalog",
     "watch-list:sync": "node index.js watch-list:sync",
+    "ohlc:collect:daily": "node index.js ohlc:collect:daily",
+    "ohlc:collect:hourly": "node index.js ohlc:collect:hourly",
     "dev": "nodemon index.js",
     "test": "node --test --test-reporter=spec test/**/*.test.js"
   },
