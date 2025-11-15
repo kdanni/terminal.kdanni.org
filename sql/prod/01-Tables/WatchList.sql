@@ -1,3 +1,5 @@
+-- DROP TABLE watch_list;
+
 -- Watch list entries synchronized with the time-series database
 -- This table supports the asset catalog UI and user watch list management.
 -- NOTE: exchange values use an empty string to represent a global/non-exchange scoped symbol
@@ -14,4 +16,4 @@ CREATE TABLE IF NOT EXISTS watch_list (
     INDEX idx_watch_list_active (active),
     INDEX idx_watch_list_symbol (symbol),
     INDEX idx_watch_list_exchange (exchange)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB COLLATE=utf8_hungarian_ci;
