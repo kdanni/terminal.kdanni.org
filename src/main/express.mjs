@@ -1,9 +1,14 @@
 import appName from '../app.mjs';
 import express from 'express';
 import { errorHandler } from './../api/error-mw.mjs';
+import assetCatalog from '../api/assets/route.mjs';
+import exchangeCatalog from '../api/exchanges/route.mjs';
+import watchListApi from '../api/watch-list/route.mjs';
 
 const app = express();
 const port = process.env.FEEDGEN_PORT || process.env.PORT || 3000;
+
+app.use(express.json());
 
 app.get('/', (req, res) => {
     res.send(`${appName.appName}`);
@@ -15,5 +20,9 @@ app.listen(port, () => {
 
 import wellKnown from '../api/well-known/route.mjs';
 app.use('/.well-known', wellKnown);
+
+app.use('/api/assets', assetCatalog);
+app.use('/api/exchanges', exchangeCatalog);
+app.use('/api/watch-list', watchListApi);
 
 app.use(errorHandler);
