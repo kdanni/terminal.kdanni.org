@@ -40,6 +40,8 @@ if (/^no[- ]operation\b/.test(commandString)) {
     tdFixedIncomeList();
 } else if (/^fund[- ]?list\b/.test(commandString)) {
     tdFundList();
+} else if (/^ping[- ]?ranking\b/.test(commandString)) {
+    pingRankingSignals();
 } else if (/^twd(?::|[- ])?asset(?::|[- ])?catalogs?\b/.test(commandString)) {
     twdAssetCatalog();
 } else if (/^twd(?::|[- ])?exchange(?::|[- ])?catalogs?\b/.test(commandString)) {
@@ -179,6 +181,18 @@ async function ohlcCollectDaily() {
 
 async function ohlcCollectHourly() {
     await collectHourlyOhlc();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+
+async function pingRankingSignals(params) {
+    const { clients } = await import('./ranking-signals/index.mjs');
+
+    await clients.pingBinance();
+    await clients.pingCoinGecko();
+    await clients.pingCoinMarketCap();
+    // await clients.pingKaiko();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
