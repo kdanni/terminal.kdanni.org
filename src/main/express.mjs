@@ -8,7 +8,7 @@ import watchListApi from '../api/watch-list/route.mjs';
 import wellKnown from '../api/well-known/route.mjs';
 
 const app = express();
-const port = process.env.FEEDGEN_PORT || process.env.PORT || 3000;
+const port = process.env.API_PORT || process.env.PORT || 3000;
 
 const parseOrigins = (value) =>
   (value || '')
