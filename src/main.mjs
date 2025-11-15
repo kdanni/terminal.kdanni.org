@@ -1,5 +1,6 @@
 import { ingestTwelveDataAssetCatalogs } from './main/twd-asset-catalog.mjs';
 import { ingestTwelveDataExchangeCatalog } from './main/twd-exchange-catalog.mjs';
+import { collectDailyOhlc, collectHourlyOhlc } from './main/ohlc-collect.mjs';
 
 let commandString = '';
 if (process.argv.length > 2) {
@@ -45,6 +46,10 @@ if (/^no[- ]operation\b/.test(commandString)) {
     twdExchangeCatalog();
 } else if (/^watch(?::|[- ])?list(?::|[- ])?sync\b/.test(commandString)) {
     watchListSync();
+} else if (/^ohlc(?::|[- ])?collect(?::|[- ])?daily\b/.test(commandString)) {
+    ohlcCollectDaily();
+} else if (/^ohlc(?::|[- ])?collect(?::|[- ])?(hourly|1h)\b/.test(commandString)) {
+    ohlcCollectHourly();
 } else {
     main();
 }
@@ -162,6 +167,18 @@ async function twdExchangeCatalog() {
 async function watchListSync() {
     const { syncWatchLists } = await import('./watch-list/sync.mjs');
     await syncWatchLists();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function ohlcCollectDaily() {
+    await collectDailyOhlc();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function ohlcCollectHourly() {
+    await collectHourlyOhlc();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
 }
