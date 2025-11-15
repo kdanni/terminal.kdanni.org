@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/kdanni/terminal.kdanni.org#readme",
   "dependencies": {
+    "cors": "2.8.5",
     "dotenv": "17.2.1",
     "express": "5.1.0",
     "got": "14.4.7",
