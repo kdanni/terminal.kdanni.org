@@ -4,21 +4,50 @@
   "context": {
     "macroFocus": "balancing growth resilience against sticky inflation and Treasury supply",
     "sentimentLens": "earnings revision velocity, institutional positioning shifts, and social buzz",
-    "riskReminder": "Highlight that the watch list supports OHLCV monitoring, not trade execution"
+    "riskReminder": "Highlight that the watch list supports OHLCV monitoring, not trade execution",
+    "constraints": {
+      "routerQuota": "Hugging Face router quotas roughly limit us to 3 rich completions per minute; prompts must stay concise and under 700 tokens.",
+      "latencyBudget": "Final responses need to arrive within a 15-second UI polling window.",
+      "olhcvRequirement": "Every symbol must already be OHLCV ready with clear exchange routing so downstream monitors can poll without extra mapping."
+    },
+    "assetMetadata": [
+      {
+        "symbol": "AAPL",
+        "exchange": "NASDAQ",
+        "liquidity": "mega-cap",
+        "theme": "iPhone durability plus AI-device capex linkage",
+        "olhcvReady": true
+      },
+      {
+        "symbol": "MSFT",
+        "exchange": "NASDAQ",
+        "liquidity": "mega-cap",
+        "theme": "cloud backlog, AI spend visibility, Activision integration",
+        "olhcvReady": true
+      },
+      {
+        "symbol": "JPM",
+        "exchange": "NYSE",
+        "liquidity": "money-center bank",
+        "theme": "deposit beta, credit provisioning, Treasury volatility hedging",
+        "olhcvReady": true
+      }
+    ]
   },
   "temperature": 0.35,
   "maxTokens": 700,
   "maxIterations": 3,
   "convergence": {
     "phase": "fineTuning",
-    "regex": "\\*\\*Equity focus table\\*\\*",
-    "keywords": ["watch list recommendation", "not financial advice"]
+    "regex": "\"schema_name\"\\s*:\\s*\"FineTuneDecisions\"",
+    "keywords": ["final_watch_list", "watch list recommendation", "not financial advice"]
   },
   "phases": [
     {
       "name": "contextSeeding",
       "logTag": "Context",
-      "promptTemplate": "Phase: context seeding. Summarize the macro debate around {{macroFocus}}. Outline 3 bullet headlines covering policy, liquidity, and sector rotation. Close with a single sentence describing how sentiment lenses such as {{sentimentLens}} will influence the screen.",
+      "promptBuilder": "buildContextPrompt",
+      "schemaKey": "ContextSummary",
       "temperature": 0.2,
       "maxRetries": 1,
       "temperatureStep": 0.1
@@ -26,7 +55,8 @@
     {
       "name": "population",
       "logTag": "Population",
-      "promptTemplate": "Phase: population. Using the seeded context below, propose 4-6 U.S. equities spanning mega-cap, growth, and defensive tilts. Context data:\n{{contextSeedingOutput}}\nFor each ticker share market-cap scale, liquidity cue, and why it matters for {{riskReminder}}. Return concise markdown bullets.",
+      "promptBuilder": "buildPopulationPrompt",
+      "schemaKey": "PopulationProposals",
       "temperature": 0.35,
       "maxRetries": 2,
       "temperatureStep": 0.1
@@ -34,7 +64,8 @@
     {
       "name": "fineTuning",
       "logTag": "Fine-tuning",
-      "promptTemplate": "Phase: fine tuning. Transform the candidate notes below into the final watch list response. Candidate notes:\n{{populationOutput}}\nFollow the exact structure: headline insight, **Equity focus table** (ticker, economic anchor, sentiment pulse), and a closing reminder that this is a watch list recommendation and not financial advice.",
+      "promptBuilder": "buildFineTunePrompt",
+      "schemaKey": "FineTuneDecisions",
       "temperature": 0.45,
       "maxRetries": 2,
       "temperatureStep": 0.05

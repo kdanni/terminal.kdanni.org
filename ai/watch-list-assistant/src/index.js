@@ -2,11 +2,48 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { ConversationOrchestrator } = require('./conversation');
+const { buildContextPrompt, buildPopulationPrompt, buildFineTunePrompt } = require('./templates');
+
+const TEMPLATE_BUILDERS = {
+  buildContextPrompt,
+  buildPopulationPrompt,
+  buildFineTunePrompt
+};
+
+function applyPromptBuilders(plan) {
+  if (!plan || !Array.isArray(plan.phases)) {
+    throw new Error('Plan is missing phases to orchestrate.');
+  }
+
+  const context = { ...(plan.context || {}) };
+
+  const phases = plan.phases.map((phase) => {
+    if (!phase.promptBuilder) {
+      if (!phase.promptTemplate) {
+        throw new Error(`Phase ${phase.name} is missing both promptBuilder and promptTemplate.`);
+      }
+      return phase;
+    }
+
+    const builder = TEMPLATE_BUILDERS[phase.promptBuilder];
+    if (!builder) {
+      throw new Error(`Unknown prompt builder: ${phase.promptBuilder}`);
+    }
+
+    return {
+      ...phase,
+      promptTemplate: builder(context, phase)
+    };
+  });
+
+  return { ...plan, phases };
+}
 
 function loadPlan() {
   const planPath = path.resolve(__dirname, 'plan.json');
   const contents = fs.readFileSync(planPath, 'utf-8');
-  return { planPath, data: JSON.parse(contents) };
+  const plan = JSON.parse(contents);
+  return { planPath, data: applyPromptBuilders(plan) };
 }
 
 async function executePlan() {
@@ -41,6 +78,10 @@ async function executePlan() {
       const result = await orchestrator.runPhase(phase, phaseContext);
 
       sharedContext[`${phase.name}Output`] = result.output;
+      if (result.structuredOutput) {
+        sharedContext[`${phase.name}Data`] = result.structuredOutput;
+        sharedContext[`${phase.name}Parsed`] = JSON.stringify(result.structuredOutput, null, 2);
+      }
       sharedContext.lastAssistantMessage = result.output;
 
       if (phase.name === convergencePhase) {
