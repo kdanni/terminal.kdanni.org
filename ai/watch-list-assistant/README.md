@@ -19,6 +19,23 @@ This folder contains a minimal proof-of-concept AI client that queries a Hugging
    npm run start
    ```
 
+### Iterating, logging, and resuming conversations
+Every run writes a timestamped JSON transcript to `./logs/` containing the system prompt plus
+the user/assistant turns for each plan phase. Use these files to review how the assistant
+progressed or to continue a partially completed iteration.
+
+- Start a **new** run (creates a fresh transcript automatically):
+  ```bash
+  npm run start
+  ```
+- **Resume** from a prior transcript and continue with the next planned phase/iteration:
+  ```bash
+  npm run start -- --resume ./logs/transcript-2025-02-19T19-42-11-123Z.json
+  ```
+
+The transcript also stores the shared context so the assistant can keep refining the watch
+list across iterations without losing prior reasoning.
+
 ## Persisting fine-tuned watch lists
 The assistant now resolves each asset returned by the fine-tuning phase against a small
 catalog (seeded from `sql/seeds/timescale/watch_list_entries.sql` and additional static

@@ -46,12 +46,30 @@ class ConversationOrchestrator {
       throw new Error(TOKEN_ERROR);
     }
 
-    this.messages = [
-      {
-        role: 'system',
-        content: options.systemPrompt || DEFAULT_SYSTEM_PROMPT
+    const initialMessages = Array.isArray(options.initialMessages)
+      ? options.initialMessages.filter(Boolean)
+      : null;
+
+    if (initialMessages?.length) {
+      this.messages = initialMessages.map((message) => ({
+        role: message.role,
+        content: message.content
+      }));
+      const hasSystem = this.messages.some((message) => message.role === 'system');
+      if (!hasSystem) {
+        this.messages.unshift({
+          role: 'system',
+          content: options.systemPrompt || DEFAULT_SYSTEM_PROMPT
+        });
       }
-    ];
+    } else {
+      this.messages = [
+        {
+          role: 'system',
+          content: options.systemPrompt || DEFAULT_SYSTEM_PROMPT
+        }
+      ];
+    }
   }
 
   async fetchLLM(messages, overrides = {}) {
@@ -140,7 +158,12 @@ class ConversationOrchestrator {
         return {
           output: assistantMessage,
           attempt: attempt + 1,
-          structuredOutput
+          structuredOutput,
+          phaseMessages: {
+            system: this.messages.find((message) => message.role === 'system'),
+            user: userMessage,
+            assistant: { role: 'assistant', content: assistantMessage }
+          }
         };
       } catch (error) {
         const isSchemaError = error instanceof SchemaValidationError;
