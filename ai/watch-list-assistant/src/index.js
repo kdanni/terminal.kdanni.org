@@ -17,17 +17,16 @@ function ensureFetch() {
 const callFetch = ensureFetch();
 
 function buildPrompt() {
-  return `Deliver a concise WATCH LIST RECOMMENDATION (not financial advice) focused on the Magnificent Seven US equities (AAPL, MSFT, GOOGL, AMZN, META, NVDA, TSLA).
+  return `Deliver a concise WATCH LIST RECOMMENDATION (not financial advice) focused on the top US equities.
+Note: Assets on the watch list are selected OHLCV data collection.
 Ground the recommendation in:
 - Economic relevance (market cap scale, average daily trading volume, index weights, sector/systemic footprints).
 - Sentiment importance (long-term mention velocity, analyst tone, social virality trends).
-- Connected macro assets: relevant USD or cross-border FX pairs, and the top-traded crypto majors tied to risk appetite.
 
 Output format:
 1. **Headline insight** highlighting why the group matters this week.
 2. **Equity focus table** with each ticker, key economic metric, and a short sentiment pulse.
-3. **Macro watch extensions** listing the supporting FX pairs and crypto assets plus the rationale for tracking them.
-4. Close with a single reminder that this is a watch list recommendation and not financial advice.`;
+3. Close with a single reminder that this is a watch list recommendation and not financial advice.`;
 }
 
 function buildMessages() {
