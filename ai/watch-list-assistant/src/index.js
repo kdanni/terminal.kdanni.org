@@ -1,5 +1,11 @@
-const MODEL_ID = process.env.HF_MODEL_ID || 'HuggingFaceH4/zephyr-7b-beta';
-const API_URL = `https://api-inference.huggingface.co/models/${MODEL_ID}`;
+const path = require('node:path');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+const MODEL_ID = process.env.HF_MODEL_ID || 'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B';
+const API_BASE_URL = (process.env.HF_API_BASE_URL || 'https://router.huggingface.co/v1').replace(/\/$/, '');
+const API_URL = `${API_BASE_URL}/chat/completions`;
 
 function ensureFetch() {
   if (typeof fetch === 'function') {
@@ -11,9 +17,8 @@ function ensureFetch() {
 const callFetch = ensureFetch();
 
 function buildPrompt() {
-  return `You are an institutional-grade research assistant.
-Your task: deliver a concise WATCH LIST RECOMMENDATION (not financial advice) focused on the Magnificent Seven US equities (AAPL, MSFT, GOOGL, AMZN, META, NVDA, TSLA).
-The watch list must be grounded in:
+  return `Deliver a concise WATCH LIST RECOMMENDATION (not financial advice) focused on the Magnificent Seven US equities (AAPL, MSFT, GOOGL, AMZN, META, NVDA, TSLA).
+Ground the recommendation in:
 - Economic relevance (market cap scale, average daily trading volume, index weights, sector/systemic footprints).
 - Sentiment importance (long-term mention velocity, analyst tone, social virality trends).
 - Connected macro assets: relevant USD or cross-border FX pairs, and the top-traded crypto majors tied to risk appetite.
@@ -25,20 +30,29 @@ Output format:
 4. Close with a single reminder that this is a watch list recommendation and not financial advice.`;
 }
 
+function buildMessages() {
+  return [
+    {
+      role: 'system',
+      content:
+        'You are an institutional-grade research assistant who produces macro-aware watch list recommendations with disciplined risk disclaimers.'
+    },
+    { role: 'user', content: buildPrompt() }
+  ];
+}
+
 async function requestWatchListRecommendation() {
-  const token = process.env.HF_API_TOKEN;
+  const token = process.env.HF_API_KEY || process.env.HF_API_TOKEN;
   if (!token) {
-    throw new Error('Missing HF_API_TOKEN environment variable. Create one at https://huggingface.co/settings/tokens');
+    throw new Error('Missing HF_API_KEY (or HF_API_TOKEN) environment variable. Create one at https://huggingface.co/settings/tokens');
   }
 
   const payload = {
-    inputs: buildPrompt(),
-    parameters: {
-      max_new_tokens: 500,
-      temperature: 0.35,
-      top_p: 0.9,
-      return_full_text: false
-    }
+    model: MODEL_ID,
+    messages: buildMessages(),
+    max_tokens: 600,
+    temperature: 0.35,
+    top_p: 0.9
   };
 
   const response = await callFetch(API_URL, {
@@ -56,9 +70,15 @@ async function requestWatchListRecommendation() {
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) {
-    return data.map((item) => item.generated_text || '').join('\n').trim();
+  if (data?.error) {
+    throw new Error(`Hugging Face router error: ${typeof data.error === 'string' ? data.error : JSON.stringify(data.error)}`);
   }
+
+  const message = data?.choices?.[0]?.message?.content;
+  if (message) {
+    return message.trim();
+  }
+
   return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
 }
 
