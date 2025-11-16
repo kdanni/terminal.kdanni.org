@@ -144,6 +144,21 @@ body {
   color: #4a5568;
 }
 
+.asset-table td.watch-cell {
+  text-align: center;
+}
+
+.watch-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.watch-toggle-status {
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
 .pagination {
   margin-top: 1.5rem;
   display: flex;
