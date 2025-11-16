@@ -1,0 +1,44 @@
+{
+  "name": "Macro-aware Watch List",
+  "systemPrompt": "You are an institutional-grade research assistant tasked with proposing a macro-aware watch list. Blend economic impact, liquidity, and cross-asset sentiment to recommend U.S. equities for observation only. Always finish with a reminder that this is not financial advice.",
+  "context": {
+    "macroFocus": "balancing growth resilience against sticky inflation and Treasury supply",
+    "sentimentLens": "earnings revision velocity, institutional positioning shifts, and social buzz",
+    "riskReminder": "Highlight that the watch list supports OHLCV monitoring, not trade execution"
+  },
+  "temperature": 0.35,
+  "maxTokens": 700,
+  "maxIterations": 3,
+  "convergence": {
+    "phase": "fineTuning",
+    "regex": "\\*\\*Equity focus table\\*\\*",
+    "keywords": ["watch list recommendation", "not financial advice"]
+  },
+  "phases": [
+    {
+      "name": "contextSeeding",
+      "logTag": "Context",
+      "promptTemplate": "Phase: context seeding. Summarize the macro debate around {{macroFocus}}. Outline 3 bullet headlines covering policy, liquidity, and sector rotation. Close with a single sentence describing how sentiment lenses such as {{sentimentLens}} will influence the screen.",
+      "temperature": 0.2,
+      "maxRetries": 1,
+      "temperatureStep": 0.1
+    },
+    {
+      "name": "population",
+      "logTag": "Population",
+      "promptTemplate": "Phase: population. Using the seeded context below, propose 4-6 U.S. equities spanning mega-cap, growth, and defensive tilts. Context data:\n{{contextSeedingOutput}}\nFor each ticker share market-cap scale, liquidity cue, and why it matters for {{riskReminder}}. Return concise markdown bullets.",
+      "temperature": 0.35,
+      "maxRetries": 2,
+      "temperatureStep": 0.1
+    },
+    {
+      "name": "fineTuning",
+      "logTag": "Fine-tuning",
+      "promptTemplate": "Phase: fine tuning. Transform the candidate notes below into the final watch list response. Candidate notes:\n{{populationOutput}}\nFollow the exact structure: headline insight, **Equity focus table** (ticker, economic anchor, sentiment pulse), and a closing reminder that this is a watch list recommendation and not financial advice.",
+      "temperature": 0.45,
+      "maxRetries": 2,
+      "temperatureStep": 0.05
+    }
+  ]
+}
+
