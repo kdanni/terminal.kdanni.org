@@ -1,6 +1,11 @@
 const path = require('node:path');
 const dotenv = require('dotenv');
 
+const {
+  SchemaValidationError,
+  validateAndParseStructuredOutput
+} = require('./structured-output');
+
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const MODEL_ID = process.env.HF_MODEL_ID || 'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B';
@@ -102,17 +107,18 @@ class ConversationOrchestrator {
       phaseName: phase.name
     }).trim();
 
-    const userMessage = {
-      role: phase.role || 'user',
-      content: compiledPrompt
-    };
-
     const maxRetries = Math.max(0, phase.maxRetries ?? 0);
     let temperature = phase.temperature ?? this.defaultTemperature;
+    let promptForAttempt = compiledPrompt;
 
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
       this.logPhaseHeader(phase, attempt);
-      this.logger.info(compiledPrompt);
+      this.logger.info(promptForAttempt);
+
+      const userMessage = {
+        role: phase.role || 'user',
+        content: promptForAttempt
+      };
 
       try {
         const assistantMessage = await this.fetchLLM([...this.messages, userMessage], {
@@ -121,6 +127,11 @@ class ConversationOrchestrator {
           top_p: phase.top_p ?? 0.9
         });
 
+        let structuredOutput;
+        if (phase.schemaKey) {
+          structuredOutput = validateAndParseStructuredOutput(phase.schemaKey, assistantMessage);
+        }
+
         this.messages.push(userMessage);
         this.messages.push({ role: 'assistant', content: assistantMessage });
 
@@ -128,16 +139,24 @@ class ConversationOrchestrator {
 
         return {
           output: assistantMessage,
-          attempt: attempt + 1
+          attempt: attempt + 1,
+          structuredOutput
         };
       } catch (error) {
+        const isSchemaError = error instanceof SchemaValidationError;
         this.logger.warn(`[${phase.name}] attempt ${attempt + 1} failed: ${error.message}`);
         if (attempt === maxRetries) {
           throw error;
         }
-        const step = phase.temperatureStep ?? 0.1;
-        temperature = Math.min(1, temperature + step);
-        this.logger.warn(`[${phase.name}] retrying with adjusted temperature=${temperature.toFixed(2)}`);
+
+        if (isSchemaError) {
+          promptForAttempt = `${compiledPrompt}\n\nSchema violation detected: ${error.message}. Respond again with VALID JSON that matches the schema exactly.`;
+        } else {
+          const step = phase.temperatureStep ?? 0.1;
+          temperature = Math.min(1, temperature + step);
+          this.logger.warn(`[${phase.name}] retrying with adjusted temperature=${temperature.toFixed(2)}`);
+          promptForAttempt = compiledPrompt;
+        }
       }
     }
 
