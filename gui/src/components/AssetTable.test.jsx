@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import AssetTable from './AssetTable.jsx';
 
 const assets = [
@@ -24,6 +26,10 @@ const assets = [
   }
 ];
 
+afterEach(() => {
+  cleanup();
+});
+
 describe('AssetTable', () => {
   it('renders a loading state', () => {
     render(<AssetTable assets={[]} loading />);
@@ -42,5 +48,27 @@ describe('AssetTable', () => {
       expect(screen.getByText(asset.symbol)).toBeInTheDocument();
       expect(screen.getByText(asset.name)).toBeInTheDocument();
     }
+  });
+
+  it('allows toggling the watch status for an asset', async () => {
+    const handleToggleWatch = vi.fn();
+    const user = userEvent.setup();
+    render(<AssetTable assets={assets} loading={false} onToggleWatch={handleToggleWatch} />);
+
+    const toggle = screen.getByLabelText('Toggle watch status for AAPL');
+    expect(toggle).toBeChecked();
+
+    await user.click(toggle);
+
+    expect(handleToggleWatch).toHaveBeenCalledWith(
+      expect.objectContaining({ symbol: 'AAPL', watched: false })
+    );
+  });
+
+  it('disables the toggle when a watch update is pending', () => {
+    const pending = new Set(['AAPL-NASDAQ']);
+    render(<AssetTable assets={assets} loading={false} pendingWatchUpdates={pending} />);
+
+    expect(screen.getByLabelText('Toggle watch status for AAPL')).toBeDisabled();
   });
 });
