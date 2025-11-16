@@ -13,5 +13,8 @@
   ],
   "author": "",
   "license": "MIT",
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
 }
