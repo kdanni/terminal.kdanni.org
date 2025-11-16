@@ -1,0 +1,17 @@
+{
+  "name": "watch-list-assistant",
+  "version": "1.0.0",
+  "description": "Proof-of-concept AI watch list assistant that queries a hosted model for macro-relevant assets.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "ai",
+    "watch-list",
+    "huggingface"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs"
+}
