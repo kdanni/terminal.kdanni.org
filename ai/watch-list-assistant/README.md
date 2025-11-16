@@ -19,6 +19,34 @@ This folder contains a minimal proof-of-concept AI client that queries a Hugging
    npm run start
    ```
 
+## Persisting fine-tuned watch lists
+The assistant now resolves each asset returned by the fine-tuning phase against a small
+catalog (seeded from `sql/seeds/timescale/watch_list_entries.sql` and additional static
+aliases). Use the new CLI flags to store a normalized payload once convergence is
+reached:
+
+```bash
+npm run start -- \
+  --write-resolved \
+  --output-dir ./ai-output \
+  --output-format csv \
+  --emit-sql
+```
+
+Flags:
+
+| Flag | Description |
+| --- | --- |
+| `--write-resolved` | Enables the resolver + persistence adapter. |
+| `--output-dir <path>` | Directory for JSON/CSV output (defaults to `./ai-output`). |
+| `--output-format <json|csv>` | Storage format for the normalized payload (defaults to JSON). |
+| `--filename-base <name>` | Prefix for generated files (defaults to `resolved-watch-list`). |
+| `--emit-sql` | Writes a Timescale-friendly upsert statement alongside the structured file. |
+
+The emitted JSON/CSV payload contains `{symbol, exchange, active}` rows plus the AI
+commentary so that downstream jobs can import the watch list into the canonical
+`asset_watch_list` table without additional mapping.
+
 ## Notes
 - The request prompt explicitly states that the response must be framed as a watch list recommendation and not financial advice.
 - Networking is routed through the Hugging Face **Inference Router** (`https://router.huggingface.co/v1/chat/completions`). Update `HF_MODEL_ID` in `.env` if you prefer another supported checkpoint.

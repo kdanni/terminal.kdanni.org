@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { ConversationOrchestrator } = require('./conversation');
+const { persistWatchList } = require('./persistence');
 const { buildContextPrompt, buildPopulationPrompt, buildFineTunePrompt } = require('./templates');
 
 const TEMPLATE_BUILDERS = {
@@ -46,7 +47,58 @@ function loadPlan() {
   return { planPath, data: applyPromptBuilders(plan) };
 }
 
-async function executePlan() {
+function parseCliOptions(argv = process.argv.slice(2)) {
+  const options = {
+    writeResolved: false,
+    outputDir: path.resolve(process.cwd(), 'ai-output'),
+    outputFormat: 'json',
+    emitSql: false,
+    filenameBase: 'resolved-watch-list'
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--write-resolved') {
+      options.writeResolved = true;
+      continue;
+    }
+    if (arg === '--emit-sql') {
+      options.emitSql = true;
+      continue;
+    }
+    if (arg.startsWith('--output-format=')) {
+      options.outputFormat = arg.split('=')[1] || options.outputFormat;
+      continue;
+    }
+    if (arg === '--output-format') {
+      options.outputFormat = argv[i + 1] || options.outputFormat;
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith('--output-dir=')) {
+      options.outputDir = path.resolve(arg.split('=')[1] || options.outputDir);
+      continue;
+    }
+    if (arg === '--output-dir') {
+      options.outputDir = path.resolve(argv[i + 1] || options.outputDir);
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith('--filename-base=')) {
+      options.filenameBase = arg.split('=')[1] || options.filenameBase;
+      continue;
+    }
+    if (arg === '--filename-base') {
+      options.filenameBase = argv[i + 1] || options.filenameBase;
+      i += 1;
+    }
+  }
+
+  options.outputFormat = options.outputFormat === 'csv' ? 'csv' : 'json';
+  return options;
+}
+
+async function executePlan(cliOptions = parseCliOptions()) {
   const { planPath, data: plan } = loadPlan();
   const orchestrator = new ConversationOrchestrator({
     systemPrompt: plan.systemPrompt,
@@ -107,11 +159,33 @@ async function executePlan() {
   console.log('\n=== Watch List Recommendation ===\n');
   console.log(finalPayload);
   console.log('\nReminder: This is a watch list recommendation, not financial advice.');
+
+  const fineTuneData = sharedContext.fineTuningData;
+  if (cliOptions.writeResolved && fineTuneData?.final_watch_list?.length) {
+    try {
+      const result = persistWatchList({
+        fineTuneData,
+        outputDir: cliOptions.outputDir,
+        filenameBase: cliOptions.filenameBase,
+        format: cliOptions.outputFormat,
+        emitSql: cliOptions.emitSql
+      });
+      console.log(`\n[Persistence] Wrote ${result.entryCount} entries to ${result.filePath}`);
+      if (result.sqlPath) {
+        console.log(`[Persistence] SQL scaffold ready at ${result.sqlPath}`);
+      }
+    } catch (error) {
+      console.warn('[Persistence] Failed to persist resolved watch list:', error.message);
+    }
+  } else if (cliOptions.writeResolved) {
+    console.warn('[Persistence] Fine-tuning output missing final_watch_list entries. Nothing was written.');
+  }
 }
 
 (async () => {
   try {
-    await executePlan();
+    const cliOptions = parseCliOptions();
+    await executePlan(cliOptions);
   } catch (error) {
     console.error('Failed to orchestrate watch list conversation:', error.message);
     process.exitCode = 1;
