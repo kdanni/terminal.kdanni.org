@@ -64,7 +64,9 @@ const SCHEMAS = {
           exchange_hint: 'NASDAQ',
           liquidity_profile: 'mega-cap',
           rationale: 'Describes why symbol matters for the macro lens',
-          olhcv_ready: true
+          olhcv_ready: true,
+          market_cap_usd: 3200,
+          sentiment_velocity: 3.5
         }
       ],
       derived_from_metadata: ['AAPL', 'MSFT']
@@ -94,6 +96,12 @@ const SCHEMAS = {
           if (typeof candidate.olhcv_ready !== 'boolean') {
             errors.push(`candidates[${index}].olhcv_ready must be boolean.`);
           }
+          if (typeof candidate.market_cap_usd !== 'number' || Number.isNaN(candidate.market_cap_usd)) {
+            errors.push(`candidates[${index}].market_cap_usd must be a number representing billions USD.`);
+          }
+          if (typeof candidate.sentiment_velocity !== 'number' || Number.isNaN(candidate.sentiment_velocity)) {
+            errors.push(`candidates[${index}].sentiment_velocity must be a numeric momentum signal.`);
+          }
         });
       }
       if (!Array.isArray(payload.derived_from_metadata)) {
@@ -119,6 +127,19 @@ const SCHEMAS = {
           economic_anchor: 'Macro linkage text',
           sentiment_pulse: 'Describe sentiment shift',
           olhcv_ready: true
+        }
+      ],
+      priority_scores: [
+        {
+          symbol: 'AAPL',
+          priority_score: 82.5,
+          factors: 'Mega-cap liquidity with positive sentiment velocity'
+        }
+      ],
+      excluded_assets: [
+        {
+          symbol: 'TSLA',
+          reason: 'Capped by data-collection quota'
         }
       ],
       reminder: 'This is a watch list recommendation, not financial advice.'
@@ -170,6 +191,43 @@ const SCHEMAS = {
             errors.push(`final_watch_list[${index}].olhcv_ready must be boolean.`);
           }
         });
+      }
+      if (!Array.isArray(payload.priority_scores)) {
+        errors.push('priority_scores must be an array summarizing the scorecard.');
+      } else {
+        payload.priority_scores.forEach((entry, index) => {
+          if (!entry || typeof entry !== 'object') {
+            errors.push(`priority_scores[${index}] must be an object.`);
+            return;
+          }
+          if (typeof entry.symbol !== 'string' || !entry.symbol.trim()) {
+            errors.push(`priority_scores[${index}].symbol must be a string.`);
+          }
+          if (typeof entry.priority_score !== 'number' || Number.isNaN(entry.priority_score)) {
+            errors.push(`priority_scores[${index}].priority_score must be numeric.`);
+          }
+          if (typeof entry.factors !== 'string' || !entry.factors.trim()) {
+            errors.push(`priority_scores[${index}].factors must be a string.`);
+          }
+        });
+      }
+      if (payload.excluded_assets) {
+        if (!Array.isArray(payload.excluded_assets)) {
+          errors.push('excluded_assets must be an array when provided.');
+        } else {
+          payload.excluded_assets.forEach((entry, index) => {
+            if (!entry || typeof entry !== 'object') {
+              errors.push(`excluded_assets[${index}] must be an object.`);
+              return;
+            }
+            if (typeof entry.symbol !== 'string' || !entry.symbol.trim()) {
+              errors.push(`excluded_assets[${index}].symbol must be a string.`);
+            }
+            if (typeof entry.reason !== 'string' || !entry.reason.trim()) {
+              errors.push(`excluded_assets[${index}].reason must be a non-empty string.`);
+            }
+          });
+        }
       }
       if (typeof payload.reminder !== 'string' || !payload.reminder.trim()) {
         errors.push('reminder must be a non-empty string.');
