@@ -133,6 +133,29 @@ function parseSymbols(input: string): string[] {
   ).slice(0, MAX_SYMBOLS);
 }
 
+function sanitizeCandles(raw: Candle[]): Candle[] {
+  const seen = new Set<string>();
+
+  return raw
+    .filter((candle) =>
+      typeof candle.open === 'number' &&
+      typeof candle.high === 'number' &&
+      typeof candle.low === 'number' &&
+      typeof candle.close === 'number' &&
+      typeof candle.volume === 'number' &&
+      candle.timestamp
+    )
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    .filter((candle) => {
+      if (seen.has(candle.timestamp)) {
+        return false;
+      }
+
+      seen.add(candle.timestamp);
+      return true;
+    });
+}
+
 function buildChartRows(seriesList: OhlcvSeries[], overlays: OverlayState): { rows: ChartRow[]; primary?: string } {
   if (!seriesList.length) {
     return { rows: [] };
@@ -356,7 +379,7 @@ export function OhlcvExplorer({ apiBaseUrl }: OhlcvExplorerProps): JSX.Element {
         symbol,
         interval: targetInterval,
         range: targetRange,
-        candles: accumulated
+        candles: sanitizeCandles(accumulated)
       };
 
       cacheRef.current.set(cacheKey, { fetchedAt: Date.now(), series: nextSeries });
