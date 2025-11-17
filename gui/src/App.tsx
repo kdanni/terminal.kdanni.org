@@ -1231,21 +1231,11 @@ function UsRegionalCatalogPage({ apiBaseUrl }: AppProps): JSX.Element {
   );
 }
 
-function OhlcvVisualizationPage(): JSX.Element {
+function OhlcvVisualizationPage({ apiBaseUrl }: AppProps): JSX.Element {
   return (
     <section className="page-shell">
       <Breadcrumbs items={[{ label: 'Asset Catalog', path: '/catalog' }, { label: 'OHLCV Visualization' }]} />
-      <header className="page-header">
-        <p className="page-kicker">Analytics</p>
-        <h1>OHLCV Visualization</h1>
-        <p className="app-description">
-          Dive into price and volume data with dedicated OHLCV visualizations. Choose an asset from the catalog to
-          begin.
-        </p>
-      </header>
-      <div className="placeholder-card">
-        <p>Visualization tools are coming soon. Select an asset from the catalog to explore its OHLCV profile.</p>
-      </div>
+      <OhlcvExplorer apiBaseUrl={apiBaseUrl} />
     </section>
   );
 }
