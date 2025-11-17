@@ -72,4 +72,19 @@ describe('AssetTable', () => {
     expect(screen.getByLabelText('Toggle watch status for AAPL')).toBeDisabled();
     expect(screen.getByText('Updating…')).toBeInTheDocument();
   });
+
+  it('allows keyboard toggling from a focused row', async () => {
+    const handleToggleWatch = vi.fn();
+    const user = userEvent.setup();
+    render(<AssetTable assets={assets} loading={false} onToggleWatch={handleToggleWatch} />);
+
+    const row = screen.getByLabelText('Asset row for AAPL');
+    row.focus();
+
+    await user.keyboard('{Enter}');
+
+    expect(handleToggleWatch).toHaveBeenCalledWith(
+      expect.objectContaining({ symbol: 'AAPL', watched: false })
+    );
+  });
 });

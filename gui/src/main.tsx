@@ -4,6 +4,7 @@ import { Auth0Provider } from '@auth0/auth0-react';
 import App from './App';
 import './styles.css';
 import { validateEnv } from './env';
+import { ThemeProvider } from './theme';
 
 async function bootstrap(): Promise<void> {
   const rootElement = document.getElementById('root');
@@ -26,18 +27,20 @@ async function bootstrap(): Promise<void> {
 
     ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
-        <Auth0Provider
-          domain={env.VITE_AUTH0_DOMAIN}
-          clientId={env.VITE_AUTH0_CLIENT_ID}
-          authorizationParams={{
-            redirect_uri: window.location.origin,
-            audience: env.VITE_AUTH0_AUDIENCE
-          }}
-          cacheLocation="localstorage"
-          useRefreshTokens
-        >
-          <App apiBaseUrl={env.VITE_API_BASE_URL} />
-        </Auth0Provider>
+        <ThemeProvider>
+          <Auth0Provider
+            domain={env.VITE_AUTH0_DOMAIN}
+            clientId={env.VITE_AUTH0_CLIENT_ID}
+            authorizationParams={{
+              redirect_uri: window.location.origin,
+              audience: env.VITE_AUTH0_AUDIENCE
+            }}
+            cacheLocation="localstorage"
+            useRefreshTokens
+          >
+            <App apiBaseUrl={env.VITE_API_BASE_URL} />
+          </Auth0Provider>
+        </ThemeProvider>
       </React.StrictMode>
     );
   } catch (error) {

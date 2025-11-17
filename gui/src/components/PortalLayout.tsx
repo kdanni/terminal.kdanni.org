@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useTheme } from '../theme';
 
 export type PortalOutletContext = {
   globalSearch: string;
@@ -13,6 +14,7 @@ export type PortalLayoutProps = {
 
 export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
   const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const [globalSearch, setGlobalSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const navigate = useNavigate();
@@ -65,6 +67,15 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
           </button>
         </form>
         <div className="auth-actions">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={toggleTheme}
+            aria-pressed={resolvedTheme === 'dark'}
+            aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} theme`}
+          >
+            {resolvedTheme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+          </button>
           {isAuthenticated ? (
             <>
               <div className="user-summary">
