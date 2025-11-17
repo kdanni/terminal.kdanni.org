@@ -2,8 +2,10 @@ import appName from '../app.mjs';
 import cors from 'cors';
 import express from 'express';
 import { errorHandler } from './../api/error-mw.mjs';
+import { requireAuth } from '../api/auth0.mjs';
 import assetCatalog from '../api/assets/route.mjs';
 import exchangeCatalog from '../api/exchanges/route.mjs';
+import meApi from '../api/me/route.mjs';
 import watchListApi from '../api/watch-list/route.mjs';
 import wellKnown from '../api/well-known/route.mjs';
 
@@ -41,12 +43,14 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('/', cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send(`${appName.appName}`);
 });
+
+app.use('/api', requireAuth);
 
 app.listen(port, () => {
   console.log(`${appName.appName} listening at *:${port}`);
@@ -56,6 +60,7 @@ app.use('/.well-known', wellKnown);
 
 app.use('/api/assets', assetCatalog);
 app.use('/api/exchanges', exchangeCatalog);
+app.use('/api/me', meApi);
 app.use('/api/watch-list', watchListApi);
 
 app.use(errorHandler);
