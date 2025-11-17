@@ -3,6 +3,7 @@ import { useAuth0, withAuthenticationRequired } from '@auth0/auth0-react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { CATALOG_FEATURED_LINKS } from './catalogFeaturedLinks';
 import { GlobalLoadingShell } from './components/GlobalLoadingShell';
+import { LoginRedirectPage } from './components/LoginRedirectPage';
 import { PortalLayout } from './components/PortalLayout';
 
 const loadCatalogRoutes = () => import('./routes/CatalogRoutes');
@@ -95,6 +96,7 @@ function App({ apiBaseUrl }: AppProps): JSX.Element {
       <AppErrorBoundary>
         <Suspense fallback={<GlobalLoadingShell visible message="Loading view…" />}>
           <Routes>
+            <Route path="/login" element={<LoginRedirectPage />} />
             <Route element={<PortalLayout authError={authError} />}>
               <Route index element={<Navigate to="/catalog" replace />} />
               <Route
