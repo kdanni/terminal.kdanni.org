@@ -22,6 +22,7 @@ import {
 import AssetTable from './components/AssetTable';
 import { Breadcrumbs, type BreadcrumbItem } from './components/Breadcrumbs';
 import { PortalLayout, type PortalOutletContext } from './components/PortalLayout';
+import OhlcvExplorer from './components/OhlcvExplorer';
 import type { Asset, ToggleWatchRequest } from './types';
 import { ApiError, useApiClient } from './apiClient';
 
@@ -1185,21 +1186,11 @@ function UsRegionalCatalogPage({ apiBaseUrl }: AppProps): JSX.Element {
   );
 }
 
-function OhlcvVisualizationPage(): JSX.Element {
+function OhlcvVisualizationPage({ apiBaseUrl }: AppProps): JSX.Element {
   return (
     <section className="page-shell">
       <Breadcrumbs items={[{ label: 'Asset Catalog', path: '/catalog' }, { label: 'OHLCV Visualization' }]} />
-      <header className="page-header">
-        <p className="page-kicker">Analytics</p>
-        <h1>OHLCV Visualization</h1>
-        <p className="app-description">
-          Dive into price and volume data with dedicated OHLCV visualizations. Choose an asset from the catalog to
-          begin.
-        </p>
-      </header>
-      <div className="placeholder-card">
-        <p>Visualization tools are coming soon. Select an asset from the catalog to explore its OHLCV profile.</p>
-      </div>
+      <OhlcvExplorer apiBaseUrl={apiBaseUrl} />
     </section>
   );
 }
@@ -1243,7 +1234,7 @@ function App({ apiBaseUrl }: AppProps): JSX.Element {
             <Route path="catalog/classes/:className" element={<ProtectedAssetClassCatalogPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="catalog/regions" element={<ProtectedRegionalIndexPage />} />
             <Route path="catalog/regions/us" element={<ProtectedUsRegionalCatalogPage apiBaseUrl={apiBaseUrl} />} />
-            <Route path="ohlcv" element={<ProtectedOhlcvVisualizationPage />} />
+            <Route path="ohlcv" element={<ProtectedOhlcvVisualizationPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="*" element={<Navigate to="/catalog" replace />} />
           </Route>
         </Routes>
