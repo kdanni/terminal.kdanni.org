@@ -36,9 +36,9 @@
   "homepage": "https://github.com/kdanni/terminal.kdanni.org#readme",
   "dependencies": {
     "cors": "2.8.5",
-    "express-oauth2-jwt-bearer": "1.6.2",
     "dotenv": "17.2.1",
     "express": "5.1.0",
+    "express-oauth2-jwt-bearer": "^1.7.1",
     "got": "14.4.7",
     "mysql2": "3.14.3",
     "pg": "8.11.5",

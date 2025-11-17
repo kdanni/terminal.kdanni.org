@@ -61,7 +61,7 @@ export function getAuth0User(req) {
 
     return {
         sub: payload.sub,
-        name: payload.name ?? payload.nickname ?? [payload.given_name, payload.family_name].filter(Boolean).join(' ') || null,
+        name: (payload.name ?? payload.nickname ?? [payload.given_name, payload.family_name].filter(Boolean).join(' ')) || null,
         email: payload.email ?? null,
         picture: payload.picture ?? null,
         roles: normalizeRoles(payload),
