@@ -70,5 +70,6 @@ describe('AssetTable', () => {
     render(<AssetTable assets={assets} loading={false} pendingWatchUpdates={pending} />);
 
     expect(screen.getByLabelText('Toggle watch status for AAPL')).toBeDisabled();
+    expect(screen.getByText('Updating…')).toBeInTheDocument();
   });
 });
