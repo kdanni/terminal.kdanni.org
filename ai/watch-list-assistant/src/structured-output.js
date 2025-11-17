@@ -274,6 +274,10 @@ function validateAndParseStructuredOutput(schemaKey, output) {
   try {
     parsed = JSON.parse(jsonPayload);
   } catch (error) {
+    const isDev = /^dev/i.test(`${process.env.NODE_ENV}`);
+    isDev && console.error('\n\njsonPayload, {depth:null}\n\n');
+    isDev && console.dir(jsonPayload, {depth:null});
+    isDev && console.error('\n\njsonPayload END\n\n');
     throw new SchemaValidationError(`Invalid JSON: ${error.message}`);
   }
   const errors = schema.validate(parsed);
