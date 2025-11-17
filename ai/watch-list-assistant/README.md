@@ -1,6 +1,6 @@
 # Watch List Assistant
 
-This folder contains a minimal proof-of-concept AI client that queries a Hugging Face Inference API model for watch list recommendations centered on the "Magnificent Seven" equities, related forex pairs, and liquid crypto assets.
+This folder contains an AI client that queries a Hugging Face Inference API model for watch list recommendations centered on the "Magnificent Seven" equities, related forex pairs, and liquid crypto assets.
 
 ## Setup
 1. Ensure Node.js 18+ is installed so that the built-in `fetch` API is available.
@@ -14,7 +14,7 @@ This folder contains a minimal proof-of-concept AI client that queries a Hugging
    ```bash
    npm install
    ```
-4. Run the proof of concept call:
+4. Run the assistant:
    ```bash
    npm run start
    ```
