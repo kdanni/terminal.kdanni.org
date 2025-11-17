@@ -1,6 +1,7 @@
-import PropTypes from 'prop-types';
+import { useMemo } from 'react';
+import type { Asset, ToggleWatchRequest } from '../types';
 
-const TABLE_COLUMNS = [
+const TABLE_COLUMNS: { key: keyof Asset | 'watched'; label: string }[] = [
   { key: 'symbol', label: 'Symbol' },
   { key: 'name', label: 'Name' },
   { key: 'assetType', label: 'Type' },
@@ -11,7 +12,7 @@ const TABLE_COLUMNS = [
   { key: 'watched', label: 'Watched' }
 ];
 
-function formatValue(value) {
+function formatValue(value: unknown): string {
   if (value == null || value === '') {
     return '—';
   }
@@ -20,10 +21,10 @@ function formatValue(value) {
     return value ? 'Yes' : 'No';
   }
 
-  return value;
+  return String(value);
 }
 
-function buildAssetKey(asset) {
+function buildAssetKey(asset: Asset | null): string {
   if (!asset) {
     return 'asset-row';
   }
@@ -33,7 +34,16 @@ function buildAssetKey(asset) {
   return `${asset.symbol}-${normalizedExchange}`;
 }
 
-function AssetTable({ assets, loading, onToggleWatch, pendingWatchUpdates }) {
+type AssetTableProps = {
+  assets?: Asset[];
+  loading?: boolean;
+  pendingWatchUpdates?: Set<string>;
+  onToggleWatch?: (request: ToggleWatchRequest) => void | Promise<void>;
+};
+
+function AssetTable({ assets = [], loading = false, onToggleWatch, pendingWatchUpdates }: AssetTableProps) {
+  const pendingUpdates = useMemo(() => pendingWatchUpdates ?? new Set<string>(), [pendingWatchUpdates]);
+
   if (loading) {
     return <div className="loading-indicator">Loading assets…</div>;
   }
@@ -57,7 +67,7 @@ function AssetTable({ assets, loading, onToggleWatch, pendingWatchUpdates }) {
         <tbody>
           {assets.map((asset) => {
             const rowKey = buildAssetKey(asset);
-            const isUpdating = pendingWatchUpdates?.has?.(rowKey);
+            const isUpdating = pendingUpdates.has(rowKey);
             return (
               <tr key={rowKey}>
                 <td>{asset.symbol}</td>
@@ -99,31 +109,5 @@ function AssetTable({ assets, loading, onToggleWatch, pendingWatchUpdates }) {
     </div>
   );
 }
-
-AssetTable.propTypes = {
-  assets: PropTypes.arrayOf(
-    PropTypes.shape({
-      assetType: PropTypes.string,
-      symbol: PropTypes.string,
-      name: PropTypes.string,
-      exchange: PropTypes.string,
-      currency: PropTypes.string,
-      country: PropTypes.string,
-      type: PropTypes.string,
-      category: PropTypes.string,
-      watched: PropTypes.bool
-    })
-  ),
-  loading: PropTypes.bool,
-  onToggleWatch: PropTypes.func,
-  pendingWatchUpdates: PropTypes.instanceOf(Set)
-};
-
-AssetTable.defaultProps = {
-  assets: [],
-  loading: false,
-  onToggleWatch: null,
-  pendingWatchUpdates: undefined
-};
 
 export default AssetTable;
