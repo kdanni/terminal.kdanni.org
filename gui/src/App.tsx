@@ -1,5 +1,6 @@
 import {
   Component,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -15,7 +16,8 @@ import {
   Route,
   Routes,
   useOutletContext,
-  useParams
+  useParams,
+  useSearchParams
 } from 'react-router-dom';
 import AssetTable from './components/AssetTable';
 import { Breadcrumbs, type BreadcrumbItem } from './components/Breadcrumbs';
@@ -82,6 +84,8 @@ type AppProps = {
 
 type CatalogProps = AppProps & {
   searchTerm: string;
+  page: number;
+  onPageChange: (page: number) => void;
 };
 
 type CatalogPageProps = AppProps & {
@@ -160,8 +164,7 @@ function GlobalLoadingShell({ visible, message }: GlobalLoadingShellProps): JSX.
   );
 }
 
-function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
-  const [page, setPage] = useState(1);
+function Catalog({ apiBaseUrl, searchTerm, page, onPageChange }: CatalogProps): JSX.Element {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -169,6 +172,10 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
   const [error, setError] = useState<Error | null>(null);
   const [actionError, setActionError] = useState<Error | null>(null);
   const [pendingWatchUpdates, setPendingWatchUpdates] = useState<Set<string>>(() => new Set());
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [reloadIndex, setReloadIndex] = useState(0);
+  const [lastSearchTerm, setLastSearchTerm] = useState(searchTerm);
   const { fetchWithAuth } = useApiClient(apiBaseUrl);
 
   useEffect(() => {
@@ -178,6 +185,7 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
     async function loadAssets(): Promise<void> {
       setLoading(true);
       setError(null);
+      const requestStartedAt = performance.now();
 
       try {
         const response = await fetchWithAuth(
@@ -194,6 +202,8 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
         setTotal(payload?.pagination?.total ?? 0);
         setTotalPages(payload?.pagination?.totalPages ?? 0);
         setPendingWatchUpdates(new Set());
+        setLatencyMs(Math.round(performance.now() - requestStartedAt));
+        setLastUpdated(new Date());
       } catch (fetchError) {
         if ((fetchError as Error)?.name === 'AbortError') {
           return;
@@ -217,6 +227,7 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
         setAssets([]);
         setTotal(0);
         setTotalPages(0);
+        setLatencyMs(null);
       } finally {
         setLoading(false);
       }
@@ -225,11 +236,15 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
     loadAssets();
 
     return () => controller.abort();
-  }, [apiBaseUrl, fetchWithAuth, searchTerm, page]);
+  }, [apiBaseUrl, fetchWithAuth, searchTerm, page, reloadIndex]);
 
   useEffect(() => {
-    setPage(1);
-  }, [searchTerm]);
+    if (lastSearchTerm === searchTerm) {
+      return;
+    }
+    setLastSearchTerm(searchTerm);
+    onPageChange(1);
+  }, [lastSearchTerm, onPageChange, searchTerm]);
 
   const description = useMemo(() => {
     if (loading) {
@@ -248,12 +263,17 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
   }, [loading, error, assets, total]);
 
   const goToPreviousPage = (): void => {
-    setPage((current) => Math.max(1, current - 1));
+    onPageChange(Math.max(1, page - 1));
   };
 
   const goToNextPage = (): void => {
-    setPage((current) => Math.min(totalPages || current + 1, current + 1));
+    onPageChange(Math.min(totalPages || page + 1, page + 1));
   };
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setReloadIndex((current) => current + 1);
+  }, []);
 
   const handleToggleWatch = async ({ symbol, exchange, watched }: ToggleWatchRequest): Promise<void> => {
     if (!symbol) {
@@ -346,11 +366,23 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
         ) : (
           <p className="app-subtle">Use the global search to filter assets.</p>
         )}
+        <div className="catalog-meta" aria-live="polite">
+          <span className="meta-chip">
+            Results: {assets.length} / {total || 0}
+          </span>
+          {latencyMs != null ? <span className="meta-chip">API latency: {latencyMs} ms</span> : null}
+          {lastUpdated ? <span className="meta-chip">Last updated: {lastUpdated.toLocaleTimeString()}</span> : null}
+        </div>
       </div>
       <main>
         {error ? (
           <div role="alert" className="error-message">
             {error.message || 'Unknown error occurred.'}
+            <div className="inline-actions">
+              <button type="button" className="secondary-button" onClick={handleRetry}>
+                Retry request
+              </button>
+            </div>
           </div>
         ) : null}
         {actionError && !error ? (
@@ -360,9 +392,11 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
         ) : null}
         <AssetTable
           assets={assets}
-          loading={loading && assets.length === 0}
+          loading={loading}
           onToggleWatch={handleToggleWatch}
           pendingWatchUpdates={pendingWatchUpdates}
+          onRetry={handleRetry}
+          totalCount={total}
         />
       </main>
       <footer className="pagination" aria-label="Pagination">
@@ -391,17 +425,109 @@ function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
 }
 
 function CatalogPage({ apiBaseUrl, title, breadcrumbs, presetSearch, description }: CatalogPageProps): JSX.Element {
-  const { globalSearch } = useOutletContext<PortalOutletContext>();
-  const combinedSearch = useMemo(
-    () =>
-      [presetSearch?.trim(), globalSearch.trim()]
-        .filter((value) => Boolean(value?.length))
-        .join(' ')
-        .trim(),
-    [presetSearch, globalSearch]
+  const { globalSearch, setGlobalSearch } = useOutletContext<PortalOutletContext>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(() => {
+    const initial = Number(searchParams.get('page'));
+    return Number.isFinite(initial) && initial > 0 ? initial : 1;
+  });
+
+  const assetClass = searchParams.get('class') ?? '';
+  const exchange = searchParams.get('exchange') ?? '';
+  const country = searchParams.get('country') ?? '';
+  const watchStatus = searchParams.get('watch') ?? 'any';
+
+  useEffect(() => {
+    const querySearch = searchParams.get('q') ?? '';
+    if (querySearch !== globalSearch) {
+      setGlobalSearch(querySearch);
+    }
+  }, [globalSearch, searchParams, setGlobalSearch]);
+
+  useEffect(() => {
+    const trimmed = globalSearch.trim();
+    const queryValue = searchParams.get('q') ?? '';
+    if (trimmed === queryValue) {
+      return;
+    }
+
+    const next = new URLSearchParams(searchParams);
+    if (trimmed) {
+      next.set('q', trimmed);
+    } else {
+      next.delete('q');
+    }
+    next.set('page', '1');
+    setPage(1);
+    setSearchParams(next);
+  }, [globalSearch, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const paramPage = Number(searchParams.get('page'));
+    const normalized = Number.isFinite(paramPage) && paramPage > 0 ? paramPage : 1;
+    if (normalized !== page) {
+      setPage(normalized);
+    }
+  }, [page, searchParams]);
+
+  const updateParams = useCallback(
+    (updater: (params: URLSearchParams) => void) => {
+      const next = new URLSearchParams(searchParams);
+      updater(next);
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams]
   );
+
+  const handleFilterChange = (key: 'class' | 'exchange' | 'country' | 'watch', value: string): void => {
+    updateParams((params) => {
+      const trimmedValue = value.trim();
+      if (!trimmedValue || (key === 'watch' && trimmedValue === 'any')) {
+        params.delete(key);
+      } else {
+        params.set(key, trimmedValue);
+      }
+      params.set('page', '1');
+    });
+    setPage(1);
+  };
+
+  const handleClearFilters = (): void => {
+    updateParams((params) => {
+      params.delete('class');
+      params.delete('exchange');
+      params.delete('country');
+      params.delete('watch');
+      params.set('page', '1');
+    });
+    setPage(1);
+  };
+
+  const combinedSearch = useMemo(() => {
+    const filterTokens = [
+      assetClass ? `class:${assetClass}` : '',
+      exchange ? `exchange:${exchange}` : '',
+      country ? `country:${country}` : '',
+      watchStatus === 'watching' ? 'watched:true' : '',
+      watchStatus === 'not-watching' ? 'watched:false' : ''
+    ].filter(Boolean);
+
+    return [presetSearch?.trim(), ...filterTokens, globalSearch.trim()]
+      .filter((value) => Boolean(value?.length))
+      .join(' ')
+      .trim();
+  }, [assetClass, country, exchange, globalSearch, presetSearch, watchStatus]);
+
   const headerDescription =
     description ?? 'Browse the asset catalog and refine the results with the global search bar above.';
+
+  const handlePageChange = (nextPage: number): void => {
+    const normalized = Math.max(1, nextPage);
+    setPage(normalized);
+    updateParams((params) => {
+      params.set('page', String(normalized));
+    });
+  };
 
   return (
     <section className="page-shell">
@@ -411,7 +537,62 @@ function CatalogPage({ apiBaseUrl, title, breadcrumbs, presetSearch, description
         <h1>{title}</h1>
         {headerDescription ? <p className="app-description">{headerDescription}</p> : null}
       </header>
-      <Catalog apiBaseUrl={apiBaseUrl} searchTerm={combinedSearch} />
+      <form className="filter-panel" role="search" aria-label="Catalog filters" onSubmit={(event) => event.preventDefault()}>
+        <div className="filter-grid">
+          <label className="filter-field" htmlFor="filter-class">
+            <span className="filter-label">Asset class</span>
+            <input
+              id="filter-class"
+              type="text"
+              value={assetClass}
+              onChange={(event) => handleFilterChange('class', event.target.value)}
+              placeholder="e.g., equity or crypto"
+              className="search-input"
+            />
+          </label>
+          <label className="filter-field" htmlFor="filter-exchange">
+            <span className="filter-label">Exchange</span>
+            <input
+              id="filter-exchange"
+              type="text"
+              value={exchange}
+              onChange={(event) => handleFilterChange('exchange', event.target.value)}
+              placeholder="e.g., NASDAQ"
+              className="search-input"
+            />
+          </label>
+          <label className="filter-field" htmlFor="filter-country">
+            <span className="filter-label">Country/Region</span>
+            <input
+              id="filter-country"
+              type="text"
+              value={country}
+              onChange={(event) => handleFilterChange('country', event.target.value)}
+              placeholder="e.g., US"
+              className="search-input"
+            />
+          </label>
+          <label className="filter-field" htmlFor="filter-watch">
+            <span className="filter-label">Watch status</span>
+            <select
+              id="filter-watch"
+              value={watchStatus}
+              onChange={(event) => handleFilterChange('watch', event.target.value)}
+              className="search-input"
+            >
+              <option value="any">Any</option>
+              <option value="watching">Watching</option>
+              <option value="not-watching">Not watching</option>
+            </select>
+          </label>
+        </div>
+        <div className="inline-actions">
+          <button type="button" className="secondary-button" onClick={handleClearFilters}>
+            Clear filters
+          </button>
+        </div>
+      </form>
+      <Catalog apiBaseUrl={apiBaseUrl} searchTerm={combinedSearch} page={page} onPageChange={handlePageChange} />
     </section>
   );
 }
