@@ -118,6 +118,9 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
             <NavLink to="/catalog/regions/us" className={linkClassName}>
               Regional (US)
             </NavLink>
+            <NavLink to="/watch-list" className={linkClassName}>
+              My Watch List
+            </NavLink>
             <NavLink to="/ohlcv" className={linkClassName}>
               OHLCV Visualization
             </NavLink>

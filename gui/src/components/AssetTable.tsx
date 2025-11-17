@@ -165,7 +165,7 @@ function AssetTable({
             const rowKey = buildAssetKey(asset);
             const isUpdating = pendingUpdates.has(rowKey);
             return (
-              <tr key={rowKey}>
+              <tr key={rowKey} aria-busy={isUpdating}>
                 <td>{asset.symbol}</td>
                 <td>{asset.name}</td>
                 <td>
@@ -192,8 +192,9 @@ function AssetTable({
                         })
                       }
                     />
-                    <span className="watch-toggle-status">
-                      {asset.watched ? 'Watching' : 'Not watching'}
+                    {isUpdating ? <span className="watch-toggle-spinner" aria-hidden="true" /> : null}
+                    <span className="watch-toggle-status" aria-live="polite">
+                      {isUpdating ? 'Updating…' : asset.watched ? 'Watching' : 'Not watching'}
                     </span>
                   </div>
                 </td>

@@ -22,6 +22,7 @@ import {
 import AssetTable from './components/AssetTable';
 import { Breadcrumbs, type BreadcrumbItem } from './components/Breadcrumbs';
 import { PortalLayout, type PortalOutletContext } from './components/PortalLayout';
+import { WatchListPage } from './components/WatchListPage';
 import type { Asset, ToggleWatchRequest } from './types';
 import { ApiError, useApiClient } from './apiClient';
 
@@ -514,13 +515,18 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
     setReloadIndex((current) => current + 1);
   }, []);
 
-  const handleToggleWatch = async ({ symbol, exchange, watched }: ToggleWatchRequest): Promise<void> => {
+  const handleToggleWatch = async ({ symbol, exchange, watched, asset }: ToggleWatchRequest): Promise<void> => {
     if (!symbol) {
       return;
     }
 
     const normalizedExchange = normalizeExchangeValue(exchange);
     const assetKey = buildAssetKey(symbol, normalizedExchange);
+    const previousAsset =
+      assets.find(
+        (existing) =>
+          existing.symbol === symbol && normalizeExchangeValue(existing.exchange) === normalizedExchange
+      ) ?? asset ?? null;
 
     setActionError(null);
     setPendingWatchUpdates((current) => {
@@ -528,6 +534,29 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
       next.add(assetKey);
       return next;
     });
+
+    if (previousAsset) {
+      setAssets((currentAssets) =>
+        currentAssets.map((current) => {
+          if (
+            current.symbol !== symbol ||
+            normalizeExchangeValue(current.exchange) !== normalizedExchange
+          ) {
+            return current;
+          }
+
+          return {
+            ...current,
+            watched,
+            watchListId: watched
+              ? current.watchListId ?? previousAsset.watchListId ?? 'pending-watch'
+              : null
+          };
+        })
+      );
+    }
+
+    let toggleError: Error | null = null;
 
     try {
       const response = await fetchWithAuth(`${apiBaseUrl}/api/watch-list/toggle`, {
@@ -551,34 +580,47 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
       const updatedWatchListId = payload?.data?.watchListId ?? null;
 
       setAssets((currentAssets) =>
-        currentAssets.map((asset) => {
-          const matchesAsset =
-            asset.symbol === symbol && normalizeExchangeValue(asset.exchange) === normalizedExchange;
-
-          if (!matchesAsset) {
-            return asset;
+        currentAssets.map((current) => {
+          if (
+            current.symbol !== symbol ||
+            normalizeExchangeValue(current.exchange) !== normalizedExchange
+          ) {
+            return current;
           }
 
           return {
-            ...asset,
+            ...current,
             watched: updatedWatched,
             watchListId: updatedWatchListId
           };
         })
       );
-    } catch (toggleError) {
-      console.error(toggleError);
+    } catch (error) {
+      console.error(error);
 
-      if (toggleError instanceof ApiError) {
-        const message =
-          toggleError.status === 403
-            ? 'You do not have permission to update the watch status.'
-            : toggleError.message;
-        setActionError(new Error(message));
-      } else {
-        setActionError(
-          toggleError instanceof Error ? toggleError : new Error('Failed to update watch status')
+      if (previousAsset) {
+        setAssets((currentAssets) =>
+          currentAssets.map((current) => {
+            if (
+              current.symbol !== symbol ||
+              normalizeExchangeValue(current.exchange) !== normalizedExchange
+            ) {
+              return current;
+            }
+
+            return previousAsset;
+          })
         );
+      }
+
+      if (error instanceof ApiError) {
+        const message =
+          error.status === 403
+            ? 'You do not have permission to update the watch status.'
+            : error.message;
+        toggleError = new Error(message);
+      } else {
+        toggleError = error instanceof Error ? error : new Error('Failed to update watch status');
       }
     } finally {
       setPendingWatchUpdates((current) => {
@@ -590,6 +632,10 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
         next.delete(assetKey);
         return next;
       });
+
+      if (toggleError) {
+        setActionError(toggleError);
+      }
     }
   };
 
@@ -1218,6 +1264,7 @@ const ProtectedAssetClassCatalogPage = withPortalAuthentication(AssetClassCatalo
 const ProtectedRegionalIndexPage = withPortalAuthentication(RegionalIndexPage);
 const ProtectedUsRegionalCatalogPage = withPortalAuthentication(UsRegionalCatalogPage);
 const ProtectedOhlcvVisualizationPage = withPortalAuthentication(OhlcvVisualizationPage);
+const ProtectedWatchListPage = withPortalAuthentication(WatchListPage);
 
 function App({ apiBaseUrl }: AppProps): JSX.Element {
   const { error: authError } = useAuth0();
@@ -1244,6 +1291,7 @@ function App({ apiBaseUrl }: AppProps): JSX.Element {
             <Route path="catalog/regions" element={<ProtectedRegionalIndexPage />} />
             <Route path="catalog/regions/us" element={<ProtectedUsRegionalCatalogPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="ohlcv" element={<ProtectedOhlcvVisualizationPage />} />
+            <Route path="watch-list" element={<ProtectedWatchListPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="*" element={<Navigate to="/catalog" replace />} />
           </Route>
         </Routes>
