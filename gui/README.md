@@ -36,3 +36,7 @@ The mock layer provides in-memory responses for `/api/assets`, `/api/watch-list`
 - `npm run build` – create a production build in `dist`
 - `npm run preview` – preview the production build locally
 - `npm run test` – run the Vitest unit test suite
+
+## Merge status
+
+- No conflict markers or unresolved merges are present in the GUI codebase as of this review.
