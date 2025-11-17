@@ -4,6 +4,7 @@ const path = require('node:path');
 const { ConversationOrchestrator } = require('./conversation');
 const { persistWatchList } = require('./persistence');
 const { buildContextPrompt, buildPopulationPrompt, buildFineTunePrompt } = require('./templates');
+const { buildPriorityScorecard, formatScorecard } = require('./scoring');
 
 const TEMPLATE_BUILDERS = {
   buildContextPrompt,
@@ -65,6 +66,55 @@ function resolveStartingPoint(transcript, phases) {
   const iteration = Math.max(0, transcript.progress?.nextIteration ?? 0);
   const phaseIndex = Math.min(phases.length, Math.max(0, transcript.progress?.nextPhaseIndex ?? 0));
   return { iteration, phaseIndex };
+}
+
+function applyQuotaToFineTuneData(fineTuneData, scorecard, maxAssets) {
+  if (!fineTuneData || !Array.isArray(fineTuneData.final_watch_list) || !maxAssets) {
+    return fineTuneData;
+  }
+
+  const scoreMap = new Map();
+  (scorecard?.scores || []).forEach((entry) => {
+    scoreMap.set(entry.symbol, entry.priority_score);
+  });
+
+  const priorityScores =
+    fineTuneData.priority_scores?.length
+      ? fineTuneData.priority_scores
+      : (scorecard?.scores || []).map((entry) => ({
+          symbol: entry.symbol,
+          priority_score: entry.priority_score,
+          factors: entry.rationale
+        }));
+
+  const sorted = [...fineTuneData.final_watch_list].sort((a, b) => {
+    const aScore = scoreMap.get(a.symbol) || 0;
+    const bScore = scoreMap.get(b.symbol) || 0;
+    return bScore - aScore;
+  });
+
+  const kept = sorted.slice(0, maxAssets);
+  const excluded = Array.isArray(fineTuneData.excluded_assets)
+    ? [...fineTuneData.excluded_assets]
+    : [];
+
+  if (sorted.length > maxAssets) {
+    sorted.slice(maxAssets).forEach((entry) => {
+      const score = scoreMap.get(entry.symbol);
+      excluded.push({
+        symbol: entry.symbol,
+        reason: `Capped by data-collection quota (${maxAssets}). Priority score: ${score ?? 'n/a'}.`
+      });
+    });
+  }
+
+  return {
+    ...fineTuneData,
+    final_watch_list: kept,
+    excluded_assets: excluded,
+    priority_scores: priorityScores,
+    max_assets_applied: maxAssets
+  };
 }
 
 function recordPhaseRun({
@@ -215,6 +265,10 @@ async function executePlan(cliOptions = parseCliOptions()) {
   const { planPath, data: plan } = loadPlan();
   const convergencePhase = plan.convergence?.phase || 'fineTuning';
   const maxIterations = Math.max(1, plan.maxIterations || 1);
+  const dataCollectionQuota = plan.context?.dataCollectionQuota || {};
+  const existingHoldings = plan.context?.existingHoldings || [];
+  const maxAssets = dataCollectionQuota.maxAssets;
+  const apiQuotaSlack = dataCollectionQuota.apiQuotaSlack ?? 1;
 
   let converged = false;
   let fineTuneOutput = '';
@@ -277,13 +331,31 @@ async function executePlan(cliOptions = parseCliOptions()) {
       if (fineTuneOutput) {
         phaseContext.previousFineTuningOutput = fineTuneOutput;
       }
+      if (phase.name === 'fineTuning') {
+        const populationData = sharedContext.populationData;
+        const scorecard = buildPriorityScorecard({
+          candidates: populationData?.candidates || [],
+          existingHoldings,
+          apiQuotaSlack
+        });
+        sharedContext.scorecardData = scorecard;
+        sharedContext.scorecard = formatScorecard(scorecard, maxAssets);
+        sharedContext.maxAssets = maxAssets;
+        phaseContext.scorecard = sharedContext.scorecard;
+        phaseContext.maxAssets = maxAssets;
+      }
 
       const result = await orchestrator.runPhase(phase, phaseContext);
 
+      let structuredOutput = result.structuredOutput;
+      if (phase.name === 'fineTuning' && structuredOutput) {
+        structuredOutput = applyQuotaToFineTuneData(structuredOutput, sharedContext.scorecardData, maxAssets);
+      }
+
       sharedContext[`${phase.name}Output`] = result.output;
-      if (result.structuredOutput) {
-        sharedContext[`${phase.name}Data`] = result.structuredOutput;
-        sharedContext[`${phase.name}Parsed`] = JSON.stringify(result.structuredOutput, null, 2);
+      if (structuredOutput) {
+        sharedContext[`${phase.name}Data`] = structuredOutput;
+        sharedContext[`${phase.name}Parsed`] = JSON.stringify(structuredOutput, null, 2);
       }
       sharedContext.lastAssistantMessage = result.output;
 
@@ -292,8 +364,8 @@ async function executePlan(cliOptions = parseCliOptions()) {
         sharedContext.fineTuningOutput = fineTuneOutput;
         converged = orchestrator.isConverged(fineTuneOutput, plan.convergence);
 
-        if (result.structuredOutput) {
-          sharedContext.fineTuningData = result.structuredOutput;
+        if (structuredOutput) {
+          sharedContext.fineTuningData = structuredOutput;
         }
 
         if (converged) {
@@ -309,7 +381,7 @@ async function executePlan(cliOptions = parseCliOptions()) {
         phaseIndex,
         phases: plan.phases,
         phase,
-        result,
+        result: { ...result, structuredOutput },
         sharedContext,
         messages: orchestrator.messages,
         converged

@@ -11,10 +11,35 @@ function formatConstraints(constraints = {}) {
   if (constraints.olhcvRequirement) {
     parts.push(`• OHLCV readiness: ${constraints.olhcvRequirement}`);
   }
+  if (constraints.dataCollectionQuota) {
+    parts.push(`• Data-collection quota: ${constraints.dataCollectionQuota}`);
+  }
   if (!parts.length) {
     return '• No explicit constraints supplied.';
   }
   return parts.join('\n');
+}
+
+function formatQuota(quota = {}) {
+  if (!quota || typeof quota !== 'object') {
+    return 'No collection quota supplied.';
+  }
+
+  const parts = [];
+  if (typeof quota.maxAssets === 'number') {
+    parts.push(`Max assets: ${quota.maxAssets}`);
+  }
+  if (typeof quota.apiQuotaSlack === 'number') {
+    parts.push(`API quota slack multiplier: ${quota.apiQuotaSlack}`);
+  }
+  if (quota.note) {
+    parts.push(`Note: ${quota.note}`);
+  }
+
+  if (!parts.length) {
+    return 'No collection quota supplied.';
+  }
+  return parts.join(' — ');
 }
 
 function formatAssetMetadata(assetMetadata = []) {
@@ -50,6 +75,7 @@ function buildContextPrompt(context = {}) {
 function buildPopulationPrompt(context = {}) {
   const constraintsBlock = formatConstraints(context.constraints);
   const metadataBlock = formatAssetMetadata(context.assetMetadata);
+  const quotaBlock = formatQuota(context.dataCollectionQuota);
   const schemaInstruction = renderSchemaInstruction('PopulationProposals');
 
   return [
@@ -62,8 +88,9 @@ function buildPopulationPrompt(context = {}) {
     metadataBlock,
     'Operational constraints to respect:',
     constraintsBlock,
+    `Data-collection guardrails: ${quotaBlock}. Include market_cap_usd (billions) and sentiment_velocity (-5 to +5) so the scorecard can be computed locally.`,
     `Reminder: ${context.riskReminder}.`,
-    'For each candidate, cite how it satisfies the macro lens, include an exchange hint, and note the liquidity profile + OHLCV readiness explicitly.',
+    'For each candidate, cite how it satisfies the macro lens, include an exchange hint, note the liquidity profile + OHLCV readiness explicitly, and supply numeric market cap plus sentiment velocity.',
     schemaInstruction
   ].join('\n\n');
 }
@@ -71,6 +98,7 @@ function buildPopulationPrompt(context = {}) {
 function buildFineTunePrompt(context = {}) {
   const constraintsBlock = formatConstraints(context.constraints);
   const metadataBlock = formatAssetMetadata(context.assetMetadata);
+  const quotaBlock = formatQuota(context.dataCollectionQuota);
   const schemaInstruction = renderSchemaInstruction('FineTuneDecisions');
 
   return [
@@ -81,10 +109,13 @@ function buildFineTunePrompt(context = {}) {
     '{{populationOutput}}',
     'Seeded asset metadata for cross-checking:',
     metadataBlock,
+    'Local priority scorecard (computed from market cap + sentiment velocity + holdings/quota adjustments):',
+    '{{scorecard}}',
     'Constraints and reminders:',
     constraintsBlock,
+    `Data-collection guardrails: ${quotaBlock}. Respect the max asset count ({{maxAssets}}) and explain exclusions.`,
     `Risk reminder: ${context.riskReminder}.`,
-    'Rules:\n- Explicitly state keep/drop/replace decisions for every candidate, referencing metadata if you keep it.\n- Only replace when you can cite a liquidity-ready alternative.\n- Final watch list entries must include economic anchor, sentiment pulse, and confirm OHLCV readiness.\n- Close with the standard non-advice reminder verbatim.',
+    'Rules:\n- Explicitly state keep/drop/replace decisions for every candidate, referencing metadata if you keep it.\n- Only replace when you can cite a liquidity-ready alternative.\n- Use the scorecard to explain trade-offs and note when a lower-ranked asset is replaced by a higher-ranked alternative.\n- Final watch list entries must include economic anchor, sentiment pulse, and confirm OHLCV readiness.\n- Cap final_watch_list to the max asset count and populate excluded_assets with reasons (quota or qualitative).\n- Include priority_scores summarizing the provided scorecard.\n- Close with the standard non-advice reminder verbatim.',
     schemaInstruction
   ].join('\n\n');
 }

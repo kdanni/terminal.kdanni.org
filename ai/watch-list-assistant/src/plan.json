@@ -8,7 +8,8 @@
     "constraints": {
       "routerQuota": "Hugging Face router quotas roughly limit us to 3 rich completions per minute; prompts must stay concise and under 700 tokens.",
       "latencyBudget": "Final responses need to arrive within a 15-second UI polling window.",
-      "olhcvRequirement": "Every symbol must already be OHLCV ready with clear exchange routing so downstream monitors can poll without extra mapping."
+      "olhcvRequirement": "Every symbol must already be OHLCV ready with clear exchange routing so downstream monitors can poll without extra mapping.",
+      "dataCollectionQuota": "Limit captures to four concurrent equities so pollers stay within the per-minute quota."
     },
     "assetMetadata": [
       {
@@ -32,7 +33,13 @@
         "theme": "deposit beta, credit provisioning, Treasury volatility hedging",
         "olhcvReady": true
       }
-    ]
+    ],
+    "existingHoldings": ["AAPL", "MSFT"],
+    "dataCollectionQuota": {
+      "maxAssets": 4,
+      "apiQuotaSlack": 0.65,
+      "note": "Timescale pollers are throttled; prefer higher-conviction names within four slots."
+    }
   },
   "temperature": 0.35,
   "maxTokens": 700,
