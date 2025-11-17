@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type KeyboardEvent } from 'react';
 import type { Asset, ToggleWatchRequest } from '../types';
 
 const TABLE_COLUMNS: { key: keyof Asset | 'watched'; label: string }[] = [
@@ -135,7 +135,7 @@ function AssetTable({
           assets
         </p>
       </div>
-      <table className="asset-table">
+      <table className="asset-table" aria-label="Asset results table">
         <thead>
           <tr>
             {TABLE_COLUMNS.map((column) => {
@@ -164,9 +164,30 @@ function AssetTable({
           {sortedAssets.map((asset) => {
             const rowKey = buildAssetKey(asset);
             const isUpdating = pendingUpdates.has(rowKey);
+            const handleRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>): void => {
+              if (!onToggleWatch || isUpdating) {
+                return;
+              }
+
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onToggleWatch({
+                  symbol: asset.symbol,
+                  exchange: asset.exchange ?? null,
+                  watched: !asset.watched,
+                  asset
+                });
+              }
+            };
             return (
-              <tr key={rowKey} aria-busy={isUpdating}>
-                <td>{asset.symbol}</td>
+              <tr
+                key={rowKey}
+                aria-busy={isUpdating}
+                tabIndex={0}
+                aria-label={`Asset row for ${asset.symbol}`}
+                onKeyDown={handleRowKeyDown}
+              >
+                <td scope="row">{asset.symbol}</td>
                 <td>{asset.name}</td>
                 <td>
                   <span className="asset-type-badge">{formatValue(asset.assetType)}</span>
