@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { Auth0Provider } from '@auth0/auth0-react';
 import App from './App';
 import './styles.css';
 import { validateEnv } from './env';
@@ -15,7 +16,18 @@ try {
 
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
-      <App apiBaseUrl={env.VITE_API_BASE_URL} />
+      <Auth0Provider
+        domain={env.VITE_AUTH0_DOMAIN}
+        clientId={env.VITE_AUTH0_CLIENT_ID}
+        authorizationParams={{
+          redirect_uri: window.location.origin,
+          audience: env.VITE_AUTH0_AUDIENCE
+        }}
+        cacheLocation="localstorage"
+        useRefreshTokens
+      >
+        <App apiBaseUrl={env.VITE_API_BASE_URL} />
+      </Auth0Provider>
     </React.StrictMode>
   );
 } catch (error) {
