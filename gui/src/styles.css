@@ -258,6 +258,69 @@ body {
   color: #475569;
 }
 
+.highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.highlight-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+.highlight-label {
+  margin: 0;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.highlight-value {
+  margin: 0.1rem 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.highlight-description {
+  margin: 0;
+  color: #475569;
+}
+
+.notice-card {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #cbd5e1;
+  background: #eef2ff;
+  color: #1e293b;
+}
+
+.notice-info {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
+}
+
+.notice-warning {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #9a3412;
+}
+
+.notice-title {
+  margin: 0;
+  font-weight: 800;
+}
+
+.notice-body {
+  margin: 0.15rem 0 0;
+}
+
 .user-summary {
   display: flex;
   align-items: center;
@@ -313,6 +376,38 @@ body {
   border-radius: 0.75rem;
   padding: 0.85rem 1rem;
   border: 1px solid #cbd5e1;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.comparison-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.comparison-label {
+  margin: 0;
+  color: #475569;
+  font-weight: 700;
+}
+
+.comparison-value {
+  margin: 0.1rem 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.comparison-helper {
+  margin: 0;
+  color: #6b7280;
 }
 
 .app-subtle {
@@ -387,6 +482,42 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.quick-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.quick-filter-pill {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quick-filter-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
+.pill-title {
+  font-weight: 700;
+}
+
+.pill-subtitle {
+  color: #475569;
+  font-size: 0.9rem;
 }
 
 .filter-grid {
