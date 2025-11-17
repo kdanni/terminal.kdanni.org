@@ -17,3 +17,20 @@ export type ToggleWatchRequest = {
   watched: boolean;
   asset?: Asset;
 };
+
+export type WatchListEntry = {
+  watchListId: string | number;
+  symbol: string;
+  exchange: string | null;
+  watched: boolean;
+  updatedAt?: string;
+};
+
+export type WatchListResponse = {
+  data: WatchListEntry[];
+  pagination?: {
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+};
