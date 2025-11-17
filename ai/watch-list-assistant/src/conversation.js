@@ -12,6 +12,24 @@ const MODEL_ID = process.env.HF_MODEL_ID || 'deepseek-ai/DeepSeek-R1-Distill-Qwe
 const API_BASE_URL = (process.env.HF_API_BASE_URL || 'https://router.huggingface.co/v1').replace(/\/$/, '');
 const API_URL = `${API_BASE_URL}/chat/completions`;
 
+function assertMessagesAreValid(messages) {
+  if (!Array.isArray(messages)) {
+    throw new Error('Payload validation failed: messages must be an array.');
+  }
+
+  messages.forEach((message, index) => {
+    if (!message || typeof message !== 'object') {
+      throw new Error(`Payload validation failed: messages[${index}] must be an object.`);
+    }
+    if (!message.role || typeof message.role !== 'string') {
+      throw new Error(`Payload validation failed: messages[${index}].role must be a string.`);
+    }
+    if (typeof message.content !== 'string' || !message.content.trim()) {
+      throw new Error(`Payload validation failed: messages[${index}].content must be a non-empty string.`);
+    }
+  });
+}
+
 function ensureFetch() {
   if (typeof fetch === 'function') {
     return fetch;
@@ -73,6 +91,8 @@ class ConversationOrchestrator {
   }
 
   async fetchLLM(messages, overrides = {}) {
+    assertMessagesAreValid(messages);
+
     const payload = {
       model: this.model,
       messages,
@@ -81,6 +101,17 @@ class ConversationOrchestrator {
       top_p: 0.9,
       ...overrides
     };
+
+    const payloadJson = JSON.stringify(payload, null, 2);
+    try {
+      JSON.parse(payloadJson);
+    } catch (error) {
+      throw new Error(`Payload serialization failed: ${error.message}`);
+    }
+
+    this.logger.info('[HF Request] Endpoint:', this.apiUrl);
+    this.logger.info('[HF Request] Headers: { "Content-Type": "application/json" }');
+    this.logger.info('[HF Request] Payload JSON:', payloadJson);
 
     const response = await this.fetch(this.apiUrl, {
       method: 'POST',

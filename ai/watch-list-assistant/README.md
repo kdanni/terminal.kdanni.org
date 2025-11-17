@@ -33,6 +33,13 @@ progressed or to continue a partially completed iteration.
   npm run start -- --resume ./logs/transcript-2025-02-19T19-42-11-123Z.json
   ```
 
+### Minimal API testrun
+Use the lightweight `testrun` script to send a minimal `model + messages` payload to the Hugging Face router and print the exact JSON body before it leaves the client:
+
+```bash
+npm run testrun
+```
+
 The transcript also stores the shared context so the assistant can keep refining the watch
 list across iterations without losing prior reasoning.
 
