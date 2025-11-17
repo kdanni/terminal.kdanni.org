@@ -3,12 +3,23 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ComponentType,
   type ErrorInfo,
-  type FormEvent,
   type ReactNode
 } from 'react';
 import { useAuth0, withAuthenticationRequired } from '@auth0/auth0-react';
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useOutletContext,
+  useParams
+} from 'react-router-dom';
 import AssetTable from './components/AssetTable';
+import { Breadcrumbs, type BreadcrumbItem } from './components/Breadcrumbs';
+import { PortalLayout, type PortalOutletContext } from './components/PortalLayout';
 import type { Asset, ToggleWatchRequest } from './types';
 import { ApiError, useApiClient } from './apiClient';
 
@@ -46,6 +57,10 @@ function buildApiUrl({ baseUrl, search, page, pageSize }: BuildApiUrlParams): st
   return `${baseUrl}/api/assets?${params.toString()}`;
 }
 
+function titleCase(value: string): string {
+  return value.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 type AssetResponse = {
   data?: Asset[];
   pagination?: {
@@ -63,6 +78,17 @@ type ToggleResponse = {
 
 type AppProps = {
   apiBaseUrl: string;
+};
+
+type CatalogProps = AppProps & {
+  searchTerm: string;
+};
+
+type CatalogPageProps = AppProps & {
+  title: string;
+  breadcrumbs: BreadcrumbItem[];
+  presetSearch?: string;
+  description?: string;
 };
 
 type AppErrorBoundaryState = {
@@ -134,62 +160,7 @@ function GlobalLoadingShell({ visible, message }: GlobalLoadingShellProps): JSX.
   );
 }
 
-function NavigationBar(): JSX.Element {
-  const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
-
-  return (
-    <nav className="top-nav" aria-label="Application">
-      <div className="brand">
-        <div className="brand-logo" aria-hidden="true">
-          KD
-        </div>
-        <div className="brand-copy">
-          <span className="brand-title">Terminal</span>
-          <span className="brand-subtitle">Asset Catalog</span>
-        </div>
-      </div>
-      <div className="auth-actions">
-        {isAuthenticated ? (
-          <>
-            <div className="user-summary">
-              {user?.picture ? (
-                <img src={user.picture} alt="Profile" className="user-avatar" />
-              ) : (
-                <div className="avatar-fallback" aria-hidden="true">
-                  {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="user-details">
-                <span className="user-name">{user?.name ?? user?.email ?? 'Authenticated user'}</span>
-                {user?.email ? <span className="user-email">{user.email}</span> : null}
-              </div>
-            </div>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
-            >
-              Log out
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            className="primary-button"
-            disabled={isLoading}
-            onClick={() => loginWithRedirect({ appState: { returnTo: window.location.pathname } })}
-          >
-            {isLoading ? 'Preparing login…' : 'Log in'}
-          </button>
-        )}
-      </div>
-    </nav>
-  );
-}
-
-function Catalog({ apiBaseUrl }: AppProps): JSX.Element {
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+function Catalog({ apiBaseUrl, searchTerm }: CatalogProps): JSX.Element {
   const [page, setPage] = useState(1);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [total, setTotal] = useState(0);
@@ -202,6 +173,7 @@ function Catalog({ apiBaseUrl }: AppProps): JSX.Element {
 
   useEffect(() => {
     const controller = new AbortController();
+    const trimmedSearch = searchTerm.trim();
 
     async function loadAssets(): Promise<void> {
       setLoading(true);
@@ -209,7 +181,7 @@ function Catalog({ apiBaseUrl }: AppProps): JSX.Element {
 
       try {
         const response = await fetchWithAuth(
-          buildApiUrl({ baseUrl: apiBaseUrl, search, page, pageSize: DEFAULT_PAGE_SIZE }),
+          buildApiUrl({ baseUrl: apiBaseUrl, search: trimmedSearch, page, pageSize: DEFAULT_PAGE_SIZE }),
           { signal: controller.signal }
         );
 
@@ -253,11 +225,11 @@ function Catalog({ apiBaseUrl }: AppProps): JSX.Element {
     loadAssets();
 
     return () => controller.abort();
-  }, [apiBaseUrl, fetchWithAuth, search, page]);
+  }, [apiBaseUrl, fetchWithAuth, searchTerm, page]);
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [searchTerm]);
 
   const description = useMemo(() => {
     if (loading) {
@@ -274,11 +246,6 @@ function Catalog({ apiBaseUrl }: AppProps): JSX.Element {
 
     return `Showing ${assets.length} of ${total} assets`;
   }, [loading, error, assets, total]);
-
-  const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    setSearch(searchInput.trim());
-  };
 
   const goToPreviousPage = (): void => {
     setPage((current) => Math.max(1, current - 1));
@@ -370,31 +337,16 @@ function Catalog({ apiBaseUrl }: AppProps): JSX.Element {
   const isInitialLoad = loading && assets.length === 0 && !error;
 
   return (
-    <div aria-busy={loading}>
+    <div className="catalog-surface" aria-busy={loading}>
       <GlobalLoadingShell visible={isInitialLoad} message="Loading asset catalog…" />
-      <header className="app-header">
-        <h1>Asset Catalog</h1>
+      <div className="catalog-summary">
         <p className="app-description">{description}</p>
-        <form className="search-form" onSubmit={onSubmit}>
-          <label className="search-label" htmlFor="asset-search">
-            Search by symbol, name, exchange, or currency
-          </label>
-          <div className="search-input-group">
-            <input
-              id="asset-search"
-              type="search"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search assets…"
-              className="search-input"
-              autoComplete="off"
-            />
-            <button type="submit" className="search-button" disabled={loading}>
-              Apply
-            </button>
-          </div>
-        </form>
-      </header>
+        {searchTerm ? (
+          <p className="app-subtle">Active filters: {searchTerm}</p>
+        ) : (
+          <p className="app-subtle">Use the global search to filter assets.</p>
+        )}
+      </div>
       <main>
         {error ? (
           <div role="alert" className="error-message">
@@ -438,26 +390,178 @@ function Catalog({ apiBaseUrl }: AppProps): JSX.Element {
   );
 }
 
-const ProtectedCatalog = withAuthenticationRequired(Catalog, {
-  onRedirecting: () => <GlobalLoadingShell visible message="Redirecting to login…" />,
-  returnTo: window.location.pathname
-});
+function CatalogPage({ apiBaseUrl, title, breadcrumbs, presetSearch, description }: CatalogPageProps): JSX.Element {
+  const { globalSearch } = useOutletContext<PortalOutletContext>();
+  const combinedSearch = useMemo(
+    () =>
+      [presetSearch?.trim(), globalSearch.trim()]
+        .filter((value) => Boolean(value?.length))
+        .join(' ')
+        .trim(),
+    [presetSearch, globalSearch]
+  );
+  const headerDescription =
+    description ?? 'Browse the asset catalog and refine the results with the global search bar above.';
+
+  return (
+    <section className="page-shell">
+      <Breadcrumbs items={breadcrumbs} />
+      <header className="page-header">
+        <p className="page-kicker">Asset Catalog</p>
+        <h1>{title}</h1>
+        {headerDescription ? <p className="app-description">{headerDescription}</p> : null}
+      </header>
+      <Catalog apiBaseUrl={apiBaseUrl} searchTerm={combinedSearch} />
+    </section>
+  );
+}
+
+function AssetClassesIndex(): JSX.Element {
+  const featuredClasses = ['equity', 'etf', 'forex', 'crypto'];
+
+  return (
+    <section className="page-shell">
+      <Breadcrumbs items={[{ label: 'Asset Catalog', path: '/catalog' }, { label: 'Asset Classes' }]} />
+      <header className="page-header">
+        <p className="page-kicker">Catalog</p>
+        <h1>Asset Classes</h1>
+        <p className="app-description">Jump into a curated view for each asset class.</p>
+      </header>
+      <div className="link-grid" role="list">
+        {featuredClasses.map((className) => (
+          <Link
+            key={className}
+            className="link-card"
+            to={`/catalog/classes/${encodeURIComponent(className)}`}
+            role="listitem"
+          >
+            <span className="link-card-title">{className.toUpperCase()}</span>
+            <span className="link-card-subtitle">View {className} instruments</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AssetClassCatalogPage({ apiBaseUrl }: AppProps): JSX.Element {
+  const { className } = useParams<{ className: string }>();
+  const classLabel = className ? className.replace(/-/g, ' ') : 'Class';
+  const displayName = classLabel ? titleCase(classLabel) : 'Class';
+
+  return (
+    <CatalogPage
+      apiBaseUrl={apiBaseUrl}
+      title={`${displayName} Assets`}
+      description={`Assets grouped under the ${displayName} class.`}
+      presetSearch={classLabel ? `class:${classLabel}` : ''}
+      breadcrumbs={[
+        { label: 'Asset Catalog', path: '/catalog' },
+        { label: 'Asset Classes', path: '/catalog/classes' },
+        { label: displayName || 'Class detail' }
+      ]}
+    />
+  );
+}
+
+function RegionalIndexPage(): JSX.Element {
+  return (
+    <section className="page-shell">
+      <Breadcrumbs items={[{ label: 'Asset Catalog', path: '/catalog' }, { label: 'Regional Views' }]} />
+      <header className="page-header">
+        <p className="page-kicker">Catalog</p>
+        <h1>Regional Views</h1>
+        <p className="app-description">Focus on specific markets starting with the United States.</p>
+      </header>
+      <div className="link-grid" role="list">
+        <Link className="link-card" to="/catalog/regions/us" role="listitem">
+          <span className="link-card-title">United States</span>
+          <span className="link-card-subtitle">View assets listed on US exchanges</span>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function UsRegionalCatalogPage({ apiBaseUrl }: AppProps): JSX.Element {
+  return (
+    <CatalogPage
+      apiBaseUrl={apiBaseUrl}
+      title="United States"
+      description="US-listed securities and instruments."
+      presetSearch="region:us"
+      breadcrumbs={[
+        { label: 'Asset Catalog', path: '/catalog' },
+        { label: 'Regional Views', path: '/catalog/regions' },
+        { label: 'United States' }
+      ]}
+    />
+  );
+}
+
+function OhlcvVisualizationPage(): JSX.Element {
+  return (
+    <section className="page-shell">
+      <Breadcrumbs items={[{ label: 'Asset Catalog', path: '/catalog' }, { label: 'OHLCV Visualization' }]} />
+      <header className="page-header">
+        <p className="page-kicker">Analytics</p>
+        <h1>OHLCV Visualization</h1>
+        <p className="app-description">
+          Dive into price and volume data with dedicated OHLCV visualizations. Choose an asset from the catalog to
+          begin.
+        </p>
+      </header>
+      <div className="placeholder-card">
+        <p>Visualization tools are coming soon. Select an asset from the catalog to explore its OHLCV profile.</p>
+      </div>
+    </section>
+  );
+}
+
+function withPortalAuthentication<P extends object>(component: ComponentType<P>): ComponentType<P> {
+  return withAuthenticationRequired(component, {
+    onRedirecting: () => <GlobalLoadingShell visible message="Redirecting to login…" />,
+    returnTo: window.location.pathname
+  });
+}
+
+const ProtectedCatalogPage = withPortalAuthentication(CatalogPage);
+const ProtectedCatalog = withPortalAuthentication(Catalog);
+const ProtectedAssetClassesIndex = withPortalAuthentication(AssetClassesIndex);
+const ProtectedAssetClassCatalogPage = withPortalAuthentication(AssetClassCatalogPage);
+const ProtectedRegionalIndexPage = withPortalAuthentication(RegionalIndexPage);
+const ProtectedUsRegionalCatalogPage = withPortalAuthentication(UsRegionalCatalogPage);
+const ProtectedOhlcvVisualizationPage = withPortalAuthentication(OhlcvVisualizationPage);
 
 function App({ apiBaseUrl }: AppProps): JSX.Element {
   const { error: authError } = useAuth0();
 
   return (
-    <AppErrorBoundary>
-      <div className="app-shell" aria-live="polite">
-        <NavigationBar />
-        {authError ? (
-          <div role="alert" className="error-message">
-            {authError.message || 'Authentication error occurred.'}
-          </div>
-        ) : null}
-        <ProtectedCatalog apiBaseUrl={apiBaseUrl} />
-      </div>
-    </AppErrorBoundary>
+    <BrowserRouter>
+      <AppErrorBoundary>
+        <Routes>
+          <Route element={<PortalLayout authError={authError} />}>
+            <Route index element={<Navigate to="/catalog" replace />} />
+            <Route
+              path="catalog"
+              element={
+                <ProtectedCatalogPage
+                  apiBaseUrl={apiBaseUrl}
+                  title="Asset Catalog"
+                  breadcrumbs={[{ label: 'Asset Catalog' }]}
+                />
+              }
+            />
+            <Route path="catalog/classes" element={<ProtectedAssetClassesIndex />} />
+            <Route path="catalog/classes/:className" element={<ProtectedAssetClassCatalogPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="catalog/regions" element={<ProtectedRegionalIndexPage />} />
+            <Route path="catalog/regions/us" element={<ProtectedUsRegionalCatalogPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="ohlcv" element={<ProtectedOhlcvVisualizationPage />} />
+            <Route path="*" element={<Navigate to="/catalog" replace />} />
+          </Route>
+        </Routes>
+      </AppErrorBoundary>
+    </BrowserRouter>
   );
 }
 
