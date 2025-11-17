@@ -12,6 +12,24 @@ npm run dev
 
 By default the Vite development server proxies API requests to `http://localhost:3000`. Override this by creating a `.env` file with `VITE_API_BASE_URL` or `VITE_PROXY_TARGET`.
 
+### Local mock API (MSW)
+
+Mock Service Worker (MSW) fixtures unblock frontend work when the backend is unavailable. To enable them:
+
+1. Generate the service worker (one-time):
+
+   ```bash
+   npm run msw:init
+   ```
+
+2. Start Vite with mocks enabled:
+
+   ```bash
+   VITE_USE_MSW=true npm run dev
+   ```
+
+The mock layer provides in-memory responses for `/api/assets`, `/api/watch-list`, `/api/watch-list/toggle`, `/api/me`, and `/api/ohlcv` based on the contracts in `docs/api-contracts.md`.
+
 ## Available scripts
 
 - `npm run dev` – start the Vite development server
