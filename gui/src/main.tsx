@@ -6,6 +6,8 @@ import './styles.css';
 import { validateEnv } from './env';
 import { ThemeProvider } from './theme';
 import { createAuth0Config } from './auth/config';
+import { initErrorReporting } from './errorReporting';
+import { startUptimeHeartbeat } from './monitoring';
 
 async function bootstrap(): Promise<void> {
   const rootElement = document.getElementById('root');
@@ -16,6 +18,13 @@ async function bootstrap(): Promise<void> {
 
   try {
     const env = validateEnv(import.meta.env);
+    initErrorReporting({
+      sentryDsn: env.VITE_SENTRY_DSN,
+      logtailSourceToken: env.VITE_LOGTAIL_SOURCE_TOKEN,
+      environment: import.meta.env.MODE,
+      release: env.VITE_RELEASE
+    });
+    startUptimeHeartbeat(env.VITE_UPTIME_HEARTBEAT_URL);
 
     if (import.meta.env.DEV && import.meta.env.VITE_USE_MSW === 'true') {
       try {

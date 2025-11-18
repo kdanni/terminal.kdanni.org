@@ -18,15 +18,23 @@ function resolveRedirectUri(env: ClientRuntimeEnv): string {
 function resolveCacheLocation(env: ClientRuntimeEnv): Auth0CacheLocation {
   const normalized = env.VITE_AUTH0_CACHE_LOCATION?.toLowerCase();
 
-  return normalized === 'memory' || normalized === 'localstorage' ? normalized : 'localstorage';
+  if (normalized === 'localstorage') {
+    console.warn('LocalStorage caching is disabled for security. Falling back to in-memory storage.');
+  }
+
+  return 'memory';
 }
 
 function resolveUseRefreshTokens(env: ClientRuntimeEnv): boolean {
-  if (env.VITE_AUTH0_USE_REFRESH_TOKENS === undefined) {
-    return true;
+  const requested = env.VITE_AUTH0_USE_REFRESH_TOKENS !== 'false';
+  const isSecureOrigin = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+
+  if (!isSecureOrigin) {
+    console.warn('Refresh tokens are disabled on insecure origins to protect cookies and tokens.');
+    return false;
   }
 
-  return env.VITE_AUTH0_USE_REFRESH_TOKENS === 'true';
+  return requested;
 }
 
 export function createAuth0Config(env: ClientRuntimeEnv): Auth0Config {

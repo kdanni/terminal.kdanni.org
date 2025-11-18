@@ -9,7 +9,11 @@ const REQUIRED_ENV_VARS = [
 const OPTIONAL_ENV_VARS = [
   'VITE_AUTH0_REDIRECT_URI',
   'VITE_AUTH0_CACHE_LOCATION',
-  'VITE_AUTH0_USE_REFRESH_TOKENS'
+  'VITE_AUTH0_USE_REFRESH_TOKENS',
+  'VITE_SENTRY_DSN',
+  'VITE_LOGTAIL_SOURCE_TOKEN',
+  'VITE_UPTIME_HEARTBEAT_URL',
+  'VITE_RELEASE'
 ] as const;
 
 export type ClientRuntimeEnv = {
@@ -21,6 +25,10 @@ export type ClientRuntimeEnv = {
   VITE_AUTH0_REDIRECT_URI?: string;
   VITE_AUTH0_CACHE_LOCATION?: string;
   VITE_AUTH0_USE_REFRESH_TOKENS?: string;
+  VITE_SENTRY_DSN?: string;
+  VITE_LOGTAIL_SOURCE_TOKEN?: string;
+  VITE_UPTIME_HEARTBEAT_URL?: string;
+  VITE_RELEASE?: string;
 };
 
 function normalizeUrl(value: string): string {

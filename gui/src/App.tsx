@@ -5,6 +5,7 @@ import { CATALOG_FEATURED_LINKS } from './catalogFeaturedLinks';
 import { GlobalLoadingShell } from './components/GlobalLoadingShell';
 import { LoginRedirectPage } from './components/LoginRedirectPage';
 import { PortalLayout } from './components/PortalLayout';
+import { logError } from './errorReporting';
 
 const loadCatalogRoutes = () => import('./routes/CatalogRoutes');
 const CatalogPage = lazy(() => loadCatalogRoutes().then((module) => ({ default: module.CatalogPage })));
@@ -35,7 +36,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, AppErrorBounda
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('Unexpected error rendering the app', error, errorInfo);
+    logError(error, { componentStack: errorInfo.componentStack });
   }
 
   handleReset = (): void => {

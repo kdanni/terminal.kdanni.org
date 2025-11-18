@@ -21,6 +21,25 @@ function buildWatchKey(entry: Pick<WatchListEntry, 'symbol' | 'exchange'>): stri
   return `${entry.symbol}-${normalizedExchange || 'na'}`;
 }
 
+function isWatchListResponse(payload: unknown): payload is WatchListResponse {
+  if (typeof payload !== 'object' || payload === null) {
+    return false;
+  }
+
+  const data = (payload as Record<string, unknown>).data;
+  const pagination = (payload as Record<string, unknown>).pagination as
+    | { total?: unknown; page?: unknown; pageSize?: unknown }
+    | undefined;
+
+  const validPagination =
+    pagination === undefined ||
+    (typeof pagination.total === 'number' || pagination.total === undefined) &&
+      (typeof pagination.page === 'number' || pagination.page === undefined) &&
+      (typeof pagination.pageSize === 'number' || pagination.pageSize === undefined);
+
+  return Array.isArray(data) && validPagination;
+}
+
 type WatchListPageProps = {
   apiBaseUrl: string;
 };
@@ -55,9 +74,14 @@ export function WatchListPage({ apiBaseUrl }: WatchListPageProps): JSX.Element {
         throw new ApiError(`Failed to load watch list: ${response.status}`, response.status);
       }
 
-      const payload = (await response.json()) as WatchListResponse;
-      setWatchList(payload?.data ?? []);
-      setTotalCount(payload?.pagination?.total ?? payload?.data?.length ?? null);
+      const payload = (await response.json()) as unknown;
+
+      if (!isWatchListResponse(payload)) {
+        throw new ApiError('Unexpected response format from the watch list API.');
+      }
+
+      setWatchList(payload.data ?? []);
+      setTotalCount(payload.pagination?.total ?? payload.data.length ?? null);
       setSelectedRows(new Set());
       setPendingRows(new Set());
     } catch (error) {
