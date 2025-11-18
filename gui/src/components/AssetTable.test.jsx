@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AssetTable from './AssetTable';
 
@@ -41,6 +41,16 @@ describe('AssetTable', () => {
     expect(screen.getByText(/no assets to display yet/i)).toBeInTheDocument();
   });
 
+  it('renders the retry action when provided', async () => {
+    const handleRetry = vi.fn();
+    const user = userEvent.setup();
+
+    render(<AssetTable assets={[]} loading={false} onRetry={handleRetry} />);
+
+    await user.click(screen.getByRole('button', { name: /retry search/i }));
+    expect(handleRetry).toHaveBeenCalledTimes(1);
+  });
+
   it('renders the asset rows when assets are provided', () => {
     render(<AssetTable assets={assets} loading={false} />);
 
@@ -71,6 +81,44 @@ describe('AssetTable', () => {
 
     expect(screen.getByLabelText('Toggle watch status for AAPL')).toBeDisabled();
     expect(screen.getByText('Updating…')).toBeInTheDocument();
+  });
+
+  it('sorts results when clicking a column header', async () => {
+    const user = userEvent.setup();
+    render(<AssetTable assets={assets} loading={false} />);
+
+    const nameHeader = screen.getByRole('button', { name: /sort by name/i });
+    await user.click(nameHeader);
+
+    const rows = screen.getAllByRole('row').slice(1); // skip header row
+    expect(rows[0]).toHaveTextContent('Apple Inc.');
+
+    await user.click(nameHeader);
+    const resortedRows = screen.getAllByRole('row').slice(1);
+    expect(resortedRows[0]).toHaveTextContent('SPDR S&P 500 ETF Trust');
+  });
+
+  it('formats empty values and displays totals', () => {
+    const partialAsset = {
+      ...assets[0],
+      exchange: null,
+      currency: '',
+      country: undefined,
+      watched: false
+    };
+
+    render(
+      <AssetTable assets={[partialAsset]} loading={false} totalCount={10} pendingWatchUpdates={new Set()} />
+    );
+
+    const row = screen.getByRole('row', { name: /asset row for aapl/i });
+    expect(within(row).getAllByText('—').length).toBeGreaterThan(0);
+    const countText = screen.getByText((_, element) => {
+      if (!element) return false;
+      const normalized = element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+      return element.classList.contains('table-count') && normalized.includes('Displaying 1 of 10 assets');
+    });
+    expect(countText).toBeInTheDocument();
   });
 
   it('allows keyboard toggling from a focused row', async () => {
