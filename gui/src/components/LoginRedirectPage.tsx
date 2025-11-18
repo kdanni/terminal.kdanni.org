@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { GlobalLoadingShell } from './GlobalLoadingShell';
 
@@ -27,14 +27,16 @@ function resolveReturnTo(search: string, fallback = '/catalog'): string {
 export function LoginRedirectPage(): JSX.Element {
   const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
   const location = useLocation();
+  const hasTriedLogin = useRef(false);
 
   const returnTo = useMemo(() => resolveReturnTo(location.search), [location.search]);
 
   useEffect(() => {
-    if (isLoading || isAuthenticated) {
+    if (hasTriedLogin.current || isLoading || isAuthenticated) {
       return;
     }
 
+    hasTriedLogin.current = true;
     void loginWithRedirect({ appState: { returnTo } });
   }, [isAuthenticated, isLoading, loginWithRedirect, returnTo]);
 

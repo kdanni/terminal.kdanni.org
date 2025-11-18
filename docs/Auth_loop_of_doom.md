@@ -156,6 +156,11 @@ Important:
 
 If we override `VITE_AUTH0_REDIRECT_URI`, that value must also be in the Allowed Callback URLs list.
 
+### 4.1.1 Current SPA wiring (Vite)
+- Auth0 config is centralized in `gui/src/auth/config.ts`.
+- `redirect_uri` comes from `VITE_AUTH0_REDIRECT_URI` and **falls back to `window.location.origin`**. Whatever value is resolved **must** appear in Auth0 → Allowed Callback URLs (e.g., `http://localhost:5173` for dev, `https://<project>.vercel.app` for prod).
+- Cache + refresh tokens are still enabled by default (`localstorage` + `useRefreshTokens=true`), but can be overridden via env vars.
+
 ### 4.2 Guard Logic (Avoiding the Loop)
 
 A common redirect loop cause is something like:
@@ -197,6 +202,8 @@ VITE_AUTH0_REDIRECT_URI=http://localhost:5173
 VITE_AUTH0_CACHE_LOCATION=localstorage
 VITE_AUTH0_USE_REFRESH_TOKENS=true
 ```
+
+If `VITE_AUTH0_REDIRECT_URI` is **not** supplied, the SPA uses `window.location.origin`. Ensure the fallback origin is present in **Allowed Callback URLs** and **Allowed Logout URLs** in Auth0 so refreshes do not trigger another redirect loop.
 
 Vercel Environment Variables (Production):
 ```env
@@ -263,6 +270,7 @@ Fix: Make sure the exact redirect URI is in the callback URL list and used consi
 - Check Guard Logic
   - Don’t call loginWithRedirect while auth is still loading.
   - Ensure you don’t trigger login on the callback route once tokens are processed.
+  - The SPA now guards against repeated login triggers by tracking a single login attempt per mount (see `gui/src/components/LoginRedirectPage.tsx`).
 - Check Env Variables
   - On Vercel, verify VITE_AUTH0_* values, redeploy after changes.
   - On the back end, ensure AUTH0_DOMAIN / AUTH0_AUDIENCE / AUTH0_ISSUER are correct.
