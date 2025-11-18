@@ -12,6 +12,13 @@ npm run dev
 
 By default the Vite development server proxies API requests to `http://localhost:3000`. Override this by creating a `.env` file with `VITE_API_BASE_URL` or `VITE_PROXY_TARGET`.
 
+Security-sensitive environment options:
+
+- `VITE_SENTRY_DSN` – enable Sentry error capture in the browser.
+- `VITE_LOGTAIL_SOURCE_TOKEN` – forward console errors to Logtail for field debugging.
+- `VITE_UPTIME_HEARTBEAT_URL` – optional endpoint that receives client-side heartbeats every five minutes.
+- `VITE_RELEASE` – release tag forwarded to observability tooling.
+
 ### Local mock API (MSW)
 
 Mock Service Worker (MSW) fixtures unblock frontend work when the backend is unavailable. To enable them:
@@ -49,6 +56,22 @@ Auth0’s “Application Login URI” should point to the GUI’s dedicated logi
 the app. Use `/login` on each host (for example, `https://terminal.kdanni.org/login` or `http://localhost:5173/login`). The
 route forwards users to Auth0’s `/authorize` endpoint and accepts an optional, same-origin `returnTo` query string to resume
 navigation after authentication.
+
+The Auth0 SPA SDK stores tokens in memory by default to avoid leaking refresh tokens into `localStorage`. Refresh tokens are
+disabled on non-HTTPS origins to prevent insecure cookie usage.
+
+## Security headers and CSP
+
+The `public/_headers` file applies security headers (HSTS, CSP with `require-sri-for`, frame/permission protections) for
+static hosting providers that honor Netlify-style header manifests. Ensure deployments include this file so third-party
+resources require SRI and all cookies stay scoped to HTTPS origins.
+
+## Observability
+
+- Errors automatically flow to Sentry when a DSN is supplied and to Logtail when a source token is present.
+- A lightweight uptime beacon can be enabled via `VITE_UPTIME_HEARTBEAT_URL`; the client will `sendBeacon` every five minutes
+  with a timestamp and user agent string.
+- Operational runbooks live in `docs/incident-playbook.md`.
 
 ## Merge status
 

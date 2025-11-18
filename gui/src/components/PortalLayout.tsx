@@ -2,6 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../theme';
+import { sanitizeSearchTerm } from '../sanitizers';
 
 export type PortalOutletContext = {
   globalSearch: string;
@@ -26,7 +27,8 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    const trimmed = searchInput.trim();
+    const trimmed = sanitizeSearchTerm(searchInput);
+    setSearchInput(trimmed);
     setGlobalSearch(trimmed);
 
     if (!location.pathname.startsWith('/catalog')) {

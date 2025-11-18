@@ -6,6 +6,8 @@ import { Breadcrumbs, type BreadcrumbItem } from '../components/Breadcrumbs';
 import { GlobalLoadingShell } from '../components/GlobalLoadingShell';
 import { type PortalOutletContext } from '../components/PortalLayout';
 import { OhlcvExplorer } from '../components/OhlcvExplorer';
+import { logError } from '../errorReporting';
+import { sanitizeFilterValue, sanitizeSearchTerm } from '../sanitizers';
 import type { Asset, ToggleWatchRequest } from '../types';
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -79,24 +81,25 @@ function buildApiUrl({ baseUrl, search, page, pageSize, filters }: BuildApiUrlPa
   const params = new URLSearchParams();
   params.set('page', String(page));
   params.set('pageSize', String(pageSize));
-  if (search) {
-    params.set('search', search);
+  const safeSearch = sanitizeSearchTerm(search);
+  if (safeSearch) {
+    params.set('search', safeSearch);
   }
 
   if (filters.assetClass) {
-    params.set('assetType', filters.assetClass);
+    params.set('assetType', sanitizeFilterValue(filters.assetClass));
   }
   if (filters.exchange) {
-    params.set('exchange', filters.exchange);
+    params.set('exchange', sanitizeFilterValue(filters.exchange));
   }
   if (filters.country) {
-    params.set('country', filters.country);
+    params.set('country', sanitizeFilterValue(filters.country));
   }
   if (filters.currency) {
-    params.set('currency', filters.currency);
+    params.set('currency', sanitizeFilterValue(filters.currency));
   }
   if (filters.category) {
-    params.set('category', filters.category);
+    params.set('category', sanitizeFilterValue(filters.category));
   }
   if (filters.watchStatus === 'watching') {
     params.set('watched', 'true');
@@ -268,6 +271,56 @@ type ToggleResponse = {
   };
 };
 
+function isAssetLike(value: unknown): value is Asset {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<Asset>;
+  return typeof candidate.symbol === 'string' && typeof candidate.name === 'string';
+}
+
+function isAssetResponsePayload(payload: unknown): payload is AssetResponse {
+  if (typeof payload !== 'object' || payload === null) {
+    return false;
+  }
+
+  const data = (payload as Record<string, unknown>).data;
+  const pagination = (payload as Record<string, unknown>).pagination as
+    | { total?: unknown; totalPages?: unknown }
+    | undefined;
+
+  const validPagination =
+    pagination === undefined ||
+    (typeof pagination.total === 'number' || pagination.total === undefined) &&
+      (typeof pagination.totalPages === 'number' || pagination.totalPages === undefined);
+
+  return (data === undefined || (Array.isArray(data) && data.every(isAssetLike))) && validPagination;
+}
+
+function isToggleResponsePayload(payload: unknown): payload is ToggleResponse {
+  if (typeof payload !== 'object' || payload === null) {
+    return false;
+  }
+
+  const data = (payload as Record<string, unknown>).data as
+    | { watched?: unknown; watchListId?: unknown }
+    | undefined;
+
+  if (data === undefined) {
+    return true;
+  }
+
+  const validWatched = typeof data.watched === 'boolean' || data.watched === undefined;
+  const validWatchListId =
+    typeof data.watchListId === 'string' ||
+    typeof data.watchListId === 'number' ||
+    data.watchListId === null ||
+    data.watchListId === undefined;
+
+  return validWatched && validWatchListId;
+}
+
 type AppProps = {
   apiBaseUrl: string;
 };
@@ -307,9 +360,23 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
   const [lastSearchTerm, setLastSearchTerm] = useState(searchTerm);
   const { fetchWithAuth } = useApiClient(apiBaseUrl);
 
+  const sanitizedFilters = useMemo(
+    () => ({
+      ...filters,
+      assetClass: sanitizeFilterValue(filters.assetClass),
+      exchange: sanitizeFilterValue(filters.exchange),
+      country: sanitizeFilterValue(filters.country),
+      currency: sanitizeFilterValue(filters.currency),
+      category: sanitizeFilterValue(filters.category)
+    }),
+    [filters]
+  );
+
+  const normalizedSearch = useMemo(() => sanitizeSearchTerm(searchTerm), [searchTerm]);
+
   useEffect(() => {
     const controller = new AbortController();
-    const trimmedSearch = searchTerm.trim();
+    const trimmedSearch = normalizedSearch;
 
     async function loadAssets(): Promise<void> {
       setLoading(true);
@@ -323,7 +390,7 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
             search: trimmedSearch,
             page,
             pageSize: DEFAULT_PAGE_SIZE,
-            filters
+            filters: sanitizedFilters
           }),
           { signal: controller.signal }
         );
@@ -332,10 +399,15 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
           throw new ApiError(`Failed to load assets: ${response.status}`, response.status);
         }
 
-        const payload = (await response.json()) as AssetResponse;
-        setAssets(payload?.data ?? []);
-        setTotal(payload?.pagination?.total ?? 0);
-        setTotalPages(payload?.pagination?.totalPages ?? 0);
+        const payload = (await response.json()) as unknown;
+
+        if (!isAssetResponsePayload(payload)) {
+          throw new ApiError('Unexpected response format from asset API.');
+        }
+
+        setAssets(payload.data ?? []);
+        setTotal(payload.pagination?.total ?? 0);
+        setTotalPages(payload.pagination?.totalPages ?? 0);
         setPendingWatchUpdates(new Set());
         setLatencyMs(Math.round(performance.now() - requestStartedAt));
         setLastUpdated(new Date());
@@ -344,7 +416,12 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
           return;
         }
 
-        console.error(fetchError);
+        logError(fetchError, {
+          source: 'catalog-load',
+          page,
+          search: trimmedSearch,
+          filters: sanitizedFilters
+        });
 
         if (fetchError instanceof ApiError) {
           const message =
@@ -371,15 +448,15 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
     loadAssets();
 
     return () => controller.abort();
-  }, [apiBaseUrl, fetchWithAuth, searchTerm, page, reloadIndex, filters]);
+  }, [apiBaseUrl, fetchWithAuth, normalizedSearch, page, reloadIndex, sanitizedFilters]);
 
   useEffect(() => {
-    if (lastSearchTerm === searchTerm) {
+    if (lastSearchTerm === normalizedSearch) {
       return;
     }
-    setLastSearchTerm(searchTerm);
+    setLastSearchTerm(normalizedSearch);
     onPageChange(1);
-  }, [lastSearchTerm, onPageChange, searchTerm]);
+  }, [lastSearchTerm, normalizedSearch, onPageChange]);
 
   const description = useMemo(() => {
     if (loading) {
@@ -470,9 +547,14 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
         throw new ApiError(`Failed to update watch status: ${response.status}`, response.status);
       }
 
-      const payload = (await response.json()) as ToggleResponse;
-      const updatedWatched = Boolean(payload?.data?.watched ?? watched);
-      const updatedWatchListId = payload?.data?.watchListId ?? null;
+      const payload = (await response.json()) as unknown;
+
+      if (!isToggleResponsePayload(payload)) {
+        throw new ApiError('Unexpected response from watch endpoint.');
+      }
+
+      const updatedWatched = Boolean(payload.data?.watched ?? watched);
+      const updatedWatchListId = payload.data?.watchListId ?? null;
 
       setAssets((currentAssets) =>
         currentAssets.map((current) => {
@@ -491,7 +573,12 @@ function Catalog({ apiBaseUrl, searchTerm, page, onPageChange, filters, filterSu
         })
       );
     } catch (error) {
-      console.error(error);
+      logError(error, {
+        source: 'watch-toggle',
+        symbol,
+        exchange: normalizedExchange,
+        watched
+      });
 
       if (previousAsset) {
         setAssets((currentAssets) =>
@@ -688,7 +775,7 @@ function CatalogPage({
   });
 
   useEffect(() => {
-    const querySearch = searchParams.get('q') ?? '';
+    const querySearch = sanitizeSearchTerm(searchParams.get('q') ?? '');
     if (querySearch !== globalSearch) {
       setGlobalSearch(querySearch);
     }
@@ -703,10 +790,11 @@ function CatalogPage({
     let changed = false;
 
     const applyDefault = (param: string, value?: string): void => {
-      if (!value || next.get(param)) {
+      const sanitized = value ? sanitizeFilterValue(value) : '';
+      if (!sanitized || next.get(param)) {
         return;
       }
-      next.set(param, value);
+      next.set(param, sanitized);
       changed = true;
     };
 
@@ -728,8 +816,8 @@ function CatalogPage({
   }, [defaultFilters, searchParams, setSearchParams]);
 
   useEffect(() => {
-    const trimmed = globalSearch.trim();
-    const queryValue = searchParams.get('q') ?? '';
+    const trimmed = sanitizeSearchTerm(globalSearch);
+    const queryValue = sanitizeSearchTerm(searchParams.get('q') ?? '');
     if (trimmed === queryValue) {
       return;
     }
@@ -768,11 +856,11 @@ function CatalogPage({
       watchParam === 'watching' || watchParam === 'not-watching' ? watchParam : 'any';
 
     return {
-      assetClass: searchParams.get('class') ?? '',
-      exchange: searchParams.get('exchange') ?? '',
-      country: searchParams.get('country') ?? '',
-      currency: searchParams.get('currency') ?? '',
-      category: searchParams.get('category') ?? '',
+      assetClass: sanitizeFilterValue(searchParams.get('class') ?? ''),
+      exchange: sanitizeFilterValue(searchParams.get('exchange') ?? ''),
+      country: sanitizeFilterValue(searchParams.get('country') ?? ''),
+      currency: sanitizeFilterValue(searchParams.get('currency') ?? ''),
+      category: sanitizeFilterValue(searchParams.get('category') ?? ''),
       watchStatus: normalizedWatch
     } satisfies CatalogFilters;
   }, [searchParams]);
@@ -780,6 +868,18 @@ function CatalogPage({
   const mergedFilters = useMemo(
     () => ({ ...DEFAULT_FILTERS, ...defaultFilters, ...filtersFromParams }),
     [defaultFilters, filtersFromParams]
+  );
+
+  const sanitizedFilters = useMemo(
+    () => ({
+      ...mergedFilters,
+      assetClass: sanitizeFilterValue(mergedFilters.assetClass),
+      exchange: sanitizeFilterValue(mergedFilters.exchange),
+      country: sanitizeFilterValue(mergedFilters.country),
+      currency: sanitizeFilterValue(mergedFilters.currency),
+      category: sanitizeFilterValue(mergedFilters.category)
+    }),
+    [mergedFilters]
   );
 
   const handleFilterChange = (key: keyof CatalogFilters, value: string): void => {
@@ -793,7 +893,7 @@ function CatalogPage({
     };
 
     updateParams((params) => {
-      const trimmedValue = value.trim();
+      const trimmedValue = key === 'watchStatus' ? value.trim() : sanitizeFilterValue(value);
       const targetKey = paramKey[key];
       if (!trimmedValue || (key === 'watchStatus' && trimmedValue === 'any')) {
         params.delete(targetKey);
@@ -815,24 +915,25 @@ function CatalogPage({
       params.delete('watch');
 
       if (quickFilter.presetSearch) {
-        params.set('q', quickFilter.presetSearch);
-        setGlobalSearch(quickFilter.presetSearch);
+        const sanitizedPreset = sanitizeSearchTerm(quickFilter.presetSearch);
+        params.set('q', sanitizedPreset);
+        setGlobalSearch(sanitizedPreset);
       }
 
       if (quickFilter.filters.assetClass != null && quickFilter.filters.assetClass !== '') {
-        params.set('class', quickFilter.filters.assetClass);
+        params.set('class', sanitizeFilterValue(quickFilter.filters.assetClass));
       }
       if (quickFilter.filters.exchange != null && quickFilter.filters.exchange !== '') {
-        params.set('exchange', quickFilter.filters.exchange);
+        params.set('exchange', sanitizeFilterValue(quickFilter.filters.exchange));
       }
       if (quickFilter.filters.country != null && quickFilter.filters.country !== '') {
-        params.set('country', quickFilter.filters.country);
+        params.set('country', sanitizeFilterValue(quickFilter.filters.country));
       }
       if (quickFilter.filters.currency != null && quickFilter.filters.currency !== '') {
-        params.set('currency', quickFilter.filters.currency);
+        params.set('currency', sanitizeFilterValue(quickFilter.filters.currency));
       }
       if (quickFilter.filters.category != null && quickFilter.filters.category !== '') {
-        params.set('category', quickFilter.filters.category);
+        params.set('category', sanitizeFilterValue(quickFilter.filters.category));
       }
       if (quickFilter.filters.watchStatus && quickFilter.filters.watchStatus !== 'any') {
         params.set('watch', quickFilter.filters.watchStatus);
@@ -858,25 +959,27 @@ function CatalogPage({
 
   const searchQuery = useMemo(
     () =>
-      [presetSearch?.trim(), globalSearch.trim()]
-        .filter((value) => Boolean(value?.length))
-        .join(' ')
-        .trim(),
+      sanitizeSearchTerm(
+        [presetSearch?.trim(), globalSearch.trim()]
+          .filter((value) => Boolean(value?.length))
+          .join(' ')
+          .trim()
+      ),
     [globalSearch, presetSearch]
   );
 
   const filterSummary = useMemo(() => {
     const tokens = [
-      mergedFilters.assetClass ? `Class: ${titleCase(mergedFilters.assetClass)}` : '',
-      mergedFilters.exchange ? `Exchange: ${mergedFilters.exchange}` : '',
-      mergedFilters.country ? `Country: ${mergedFilters.country}` : '',
-      mergedFilters.currency ? `Currency: ${mergedFilters.currency}` : '',
-      mergedFilters.category ? `Category: ${mergedFilters.category}` : '',
-      mergedFilters.watchStatus !== 'any' ? `Watch: ${mergedFilters.watchStatus}` : ''
+      sanitizedFilters.assetClass ? `Class: ${titleCase(sanitizedFilters.assetClass)}` : '',
+      sanitizedFilters.exchange ? `Exchange: ${sanitizedFilters.exchange}` : '',
+      sanitizedFilters.country ? `Country: ${sanitizedFilters.country}` : '',
+      sanitizedFilters.currency ? `Currency: ${sanitizedFilters.currency}` : '',
+      sanitizedFilters.category ? `Category: ${sanitizedFilters.category}` : '',
+      sanitizedFilters.watchStatus !== 'any' ? `Watch: ${sanitizedFilters.watchStatus}` : ''
     ].filter(Boolean);
 
     return tokens.join(' • ');
-  }, [mergedFilters]);
+  }, [sanitizedFilters]);
 
   const headerDescription =
     description ?? 'Browse the asset catalog and refine the results with the global search bar above.';
@@ -947,7 +1050,7 @@ function CatalogPage({
             <input
               id="filter-class"
               type="text"
-              value={mergedFilters.assetClass}
+              value={sanitizedFilters.assetClass}
               onChange={(event) => handleFilterChange('assetClass', event.target.value)}
               placeholder="e.g., equity or crypto"
               className="search-input"
@@ -958,7 +1061,7 @@ function CatalogPage({
             <input
               id="filter-exchange"
               type="text"
-              value={mergedFilters.exchange}
+              value={sanitizedFilters.exchange}
               onChange={(event) => handleFilterChange('exchange', event.target.value)}
               placeholder="e.g., NASDAQ"
               className="search-input"
@@ -969,7 +1072,7 @@ function CatalogPage({
             <input
               id="filter-country"
               type="text"
-              value={mergedFilters.country}
+              value={sanitizedFilters.country}
               onChange={(event) => handleFilterChange('country', event.target.value)}
               placeholder="e.g., US"
               className="search-input"
@@ -980,7 +1083,7 @@ function CatalogPage({
             <input
               id="filter-currency"
               type="text"
-              value={mergedFilters.currency}
+              value={sanitizedFilters.currency}
               onChange={(event) => handleFilterChange('currency', event.target.value)}
               placeholder="e.g., USD"
               className="search-input"
@@ -991,7 +1094,7 @@ function CatalogPage({
             <input
               id="filter-category"
               type="text"
-              value={mergedFilters.category}
+              value={sanitizedFilters.category}
               onChange={(event) => handleFilterChange('category', event.target.value)}
               placeholder="e.g., thematic, growth, bond"
               className="search-input"
@@ -1001,7 +1104,7 @@ function CatalogPage({
             <span className="filter-label">Watch status</span>
             <select
               id="filter-watch"
-              value={mergedFilters.watchStatus}
+              value={sanitizedFilters.watchStatus}
               onChange={(event) => handleFilterChange('watchStatus', event.target.value)}
               className="search-input"
             >
@@ -1021,7 +1124,7 @@ function CatalogPage({
         apiBaseUrl={apiBaseUrl}
         searchTerm={searchQuery}
         page={page}
-        filters={mergedFilters}
+        filters={sanitizedFilters}
         filterSummary={filterSummary}
         comparisonTitle={title}
         onPageChange={handlePageChange}
