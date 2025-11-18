@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "msw:init": "msw init public --save",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
@@ -28,6 +29,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.3.10",
     "@types/react-dom": "^18.3.0",
+    "@playwright/test": "^1.48.2",
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",
     "@vitejs/plugin-react": "^4.3.1",
@@ -43,5 +45,10 @@
     "typescript": "^5.6.3",
     "vite": "^5.2.0",
     "vitest": "^1.6.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
