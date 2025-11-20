@@ -43,8 +43,9 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-// DO NOT use app.options('*', cors(corsOptions));
+// Handle explicit OPTIONS checks for the root and any nested path using a regex (Express 5 rejects "*").
 app.options('/', cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions));
 app.use(express.json());
 
 app.get('/', (req, res) => {
