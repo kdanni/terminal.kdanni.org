@@ -94,21 +94,23 @@ export function WelcomePage({ apiBaseUrl }: WelcomePageProps): JSX.Element {
             .trim()
         : 'Asset Class';
 
-      return {
-        assetType,
-        displayName,
-        totalLabel: typeof entry.total === 'number' ? `${entry.total.toLocaleString()} records` : 'Unknown size',
-        description: classDescriptions[assetType] ?? 'Open the data table for this class.',
-        path:
-          assetType === 'stock'
-            ? '/stock'
-            : assetType === 'etf'
-              ? '/etf'
-              : assetType === 'fixed_income'
-                ? '/fixincome'
-                : `/catalog/classes/${encodeURIComponent(assetType || 'class')}`
-      };
-    });
+          return {
+            assetType,
+            displayName,
+            totalLabel: typeof entry.total === 'number' ? `${entry.total.toLocaleString()} records` : 'Unknown size',
+            description: classDescriptions[assetType] ?? 'Open the data table for this class.',
+            path:
+              assetType === 'stock'
+                ? '/stock'
+                : assetType === 'etf'
+                  ? '/etf'
+                  : assetType === 'fixed_income'
+                    ? '/fixincome'
+                    : assetType === 'commodity'
+                      ? '/commodity'
+                      : `/catalog/classes/${encodeURIComponent(assetType || 'class')}`
+          };
+        });
   }, [assetClasses]);
 
   const hasClasses = normalizedAssetClasses.length > 0;
