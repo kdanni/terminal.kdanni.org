@@ -12,6 +12,11 @@ export const CATALOG_FEATURED_LINKS: FeaturedLink[] = [
     to: '/catalog/classes/etf'
   },
   {
+    title: 'Fixed income',
+    description: 'Access bonds, notes, and other rate products with pagination and filters.',
+    to: '/fixincome'
+  },
+  {
     title: 'Forex Pairs',
     description: 'Search base/quote pairs with USD majors pre-highlighted.',
     to: '/catalog/classes/forex'
