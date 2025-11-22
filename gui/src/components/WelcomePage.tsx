@@ -99,7 +99,7 @@ export function WelcomePage({ apiBaseUrl }: WelcomePageProps): JSX.Element {
         displayName,
         totalLabel: typeof entry.total === 'number' ? `${entry.total.toLocaleString()} records` : 'Unknown size',
         description: classDescriptions[assetType] ?? 'Open the data table for this class.',
-        path: `/catalog/classes/${encodeURIComponent(assetType || 'class')}`
+        path: assetType === 'stock' ? '/stock' : `/catalog/classes/${encodeURIComponent(assetType || 'class')}`
       };
     });
   }, [assetClasses]);
