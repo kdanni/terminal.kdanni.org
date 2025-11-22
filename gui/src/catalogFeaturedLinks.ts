@@ -15,5 +15,10 @@ export const CATALOG_FEATURED_LINKS: FeaturedLink[] = [
     title: 'Forex Pairs',
     description: 'Search base/quote pairs with USD majors pre-highlighted.',
     to: '/catalog/classes/forex'
+  },
+  {
+    title: 'Crypto pairs',
+    description: 'Jump straight to the dedicated crypto catalog with venue filters.',
+    to: '/crypto'
   }
 ];
