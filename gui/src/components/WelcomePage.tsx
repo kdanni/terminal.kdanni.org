@@ -104,7 +104,9 @@ export function WelcomePage({ apiBaseUrl }: WelcomePageProps): JSX.Element {
             ? '/stock'
             : assetType === 'etf'
               ? '/etf'
-              : `/catalog/classes/${encodeURIComponent(assetType || 'class')}`
+              : assetType === 'fixed_income'
+                ? '/fixincome'
+                : `/catalog/classes/${encodeURIComponent(assetType || 'class')}`
       };
     });
   }, [assetClasses]);
