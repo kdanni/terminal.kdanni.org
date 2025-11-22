@@ -1,6 +1,7 @@
 import { HttpResponse, http } from 'msw';
 import {
   getAssetPage,
+  getAssetClasses,
   getOhlcvFixture,
   getProfileFixture,
   getWatchList,
@@ -24,6 +25,10 @@ export const handlers = [
 
     const payload = getAssetPage(search, page, pageSize);
     return HttpResponse.json(payload);
+  }),
+
+  http.get('*/api/assets/classes', () => {
+    return HttpResponse.json(getAssetClasses());
   }),
 
   http.get('*/api/watch-list', ({ request }) => {

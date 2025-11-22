@@ -64,6 +64,27 @@ These contracts formalize the JSON envelopes shared across the frontend and back
 - `400` for malformed pagination values (non-numeric `page`/`pageSize`).
 - `401`/`403` for missing or insufficient authorization.
 
+## Asset classes overview
+
+**Endpoint:** `GET /api/assets/classes`
+
+Lists the distinct asset classes in the catalog with record counts. Useful for
+driving navigation to class-specific data tables.
+
+**Success response (200):**
+
+```json
+{
+  "data": [
+    { "assetType": "stock", "total": 10 },
+    { "assetType": "etf", "total": 2 }
+  ]
+}
+```
+
+**Errors:**
+- `401`/`403` for authorization issues.
+
 ## Watch list retrieval
 
 **Endpoint:** `GET /api/watch-list`
