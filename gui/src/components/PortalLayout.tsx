@@ -1,13 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { useEffect, useState, type FormEvent } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { useTheme } from '../theme';
-import { sanitizeSearchTerm } from '../sanitizers';
-
-export type PortalOutletContext = {
-  globalSearch: string;
-  setGlobalSearch: (value: string) => void;
-};
 
 export type PortalLayoutProps = {
   authError?: Error | null;
@@ -16,28 +9,6 @@ export type PortalLayoutProps = {
 export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
   const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
   const { resolvedTheme, toggleTheme } = useTheme();
-  const [globalSearch, setGlobalSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    setSearchInput(globalSearch);
-  }, [globalSearch]);
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    const trimmed = sanitizeSearchTerm(searchInput);
-    setSearchInput(trimmed);
-    setGlobalSearch(trimmed);
-
-    if (!location.pathname.startsWith('/catalog')) {
-      navigate('/catalog');
-    }
-  };
-
-  const linkClassName = ({ isActive }: { isActive: boolean }): string =>
-    isActive ? 'sidebar-link sidebar-link-active' : 'sidebar-link';
 
   return (
     <div className="portal-shell" aria-live="polite">
@@ -48,26 +19,12 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
           </div>
           <div className="brand-copy">
             <span className="brand-title">Terminal</span>
-            <span className="brand-subtitle">Asset Portal</span>
+            <span className="brand-subtitle">Next-generation workspace</span>
           </div>
         </NavLink>
-        <form className="global-search" onSubmit={handleSubmit} role="search">
-          <label htmlFor="global-search" className="visually-hidden">
-            Search assets
-          </label>
-          <input
-            id="global-search"
-            type="search"
-            placeholder="Global search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            autoComplete="off"
-            className="search-input"
-          />
-          <button type="submit" className="search-button" disabled={isLoading}>
-            Search
-          </button>
-        </form>
+        <p className="header-lede">
+          Streamlined, wide-screen canvas ready for the next iterations of the catalog experience.
+        </p>
         <div className="auth-actions">
           <button
             type="button"
@@ -118,31 +75,9 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
           {authError.message || 'Authentication error occurred.'}
         </div>
       ) : null}
-      <div className="portal-body">
-        <aside className="portal-sidebar">
-          <h2 className="sidebar-title">Navigation</h2>
-          <nav aria-label="Primary">
-            <NavLink to="/catalog" className={linkClassName} end>
-              Asset Catalog
-            </NavLink>
-            <NavLink to="/catalog/classes" className={linkClassName}>
-              Asset Classes
-            </NavLink>
-            <NavLink to="/catalog/regions/us" className={linkClassName}>
-              Regional (US)
-            </NavLink>
-            <NavLink to="/watch-list" className={linkClassName}>
-              My Watch List
-            </NavLink>
-            <NavLink to="/ohlcv" className={linkClassName}>
-              OHLCV Visualization
-            </NavLink>
-          </nav>
-        </aside>
-        <main className="portal-content">
-          <Outlet context={{ globalSearch, setGlobalSearch } satisfies PortalOutletContext} />
-        </main>
-      </div>
+      <main className="portal-content portal-content-wide">
+        <Outlet />
+      </main>
     </div>
   );
 }
