@@ -58,23 +58,23 @@ body {
 }
 
 .portal-shell {
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 1.5rem 1.5rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .portal-header {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  background: var(--color-surface-strong);
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-surface-strong), color-mix(in srgb, var(--color-surface-strong) 80%, #1e3a8a));
   color: var(--color-text-contrast);
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   box-shadow: var(--shadow-strong);
 }
 
@@ -114,81 +114,22 @@ body {
   color: var(--color-text-subtle);
 }
 
-.global-search {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.portal-content {
+  background: var(--color-surface);
+  padding: 1.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+}
+
+.portal-content-wide {
   width: 100%;
 }
 
-.global-search .search-input {
-  flex: 1;
-  background: var(--color-surface-strong);
+.header-lede {
+  margin: 0;
   color: var(--color-text-contrast);
-  border: 1px solid var(--color-border);
-}
-
-.global-search .search-input::placeholder {
-  color: var(--color-text-subtle);
-}
-
-.portal-body {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.portal-sidebar {
-  background: var(--color-surface);
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.sidebar-title {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.portal-sidebar nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.sidebar-link {
-  display: block;
-  padding: 0.65rem 0.75rem;
-  border-radius: 0.5rem;
-  color: var(--color-text);
-  text-decoration: none;
-  font-weight: 600;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.sidebar-link:hover {
-  background: var(--color-surface-muted);
-}
-
-.sidebar-link-active {
-  background: var(--color-accent);
-  color: var(--color-text-contrast);
-}
-
-.portal-content {
-  background: var(--color-surface);
-  padding: 1.25rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-soft);
+  opacity: 0.9;
 }
 
 .auth-actions {
