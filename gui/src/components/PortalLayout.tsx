@@ -63,6 +63,12 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
             Crypto
           </NavLink>
           <NavLink
+            to="/commodity"
+            className={({ isActive }) => `portal-nav-link${isActive ? ' is-active' : ''}`}
+          >
+            Commodities
+          </NavLink>
+          <NavLink
             to="/watchlist"
             className={({ isActive }) => `portal-nav-link${isActive ? ' is-active' : ''}`}
           >

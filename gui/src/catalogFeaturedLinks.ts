@@ -17,6 +17,11 @@ export const CATALOG_FEATURED_LINKS: FeaturedLink[] = [
     to: '/fixincome'
   },
   {
+    title: 'Commodities',
+    description: 'Browse metals, energy, and agricultural contracts with quick filters.',
+    to: '/commodity'
+  },
+  {
     title: 'Forex Pairs',
     description: 'Search base/quote pairs with USD majors pre-highlighted.',
     to: '/catalog/classes/forex'

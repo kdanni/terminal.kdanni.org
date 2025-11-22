@@ -7,6 +7,7 @@ export type Asset = {
   country?: string | null;
   type?: string | null;
   category?: string | null;
+  description?: string | null;
   currencyBase?: string | null;
   currencyQuote?: string | null;
   availableExchanges?: string[] | null;
