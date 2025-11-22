@@ -305,4 +305,29 @@ router.get('/', async (req, res, next) => {
     }
 });
 
+router.get('/classes', async (req, res, next) => {
+    const classQuery = `
+        SELECT
+            assets.asset_type,
+            COUNT(*) AS total
+        FROM (${UNIFIED_ASSETS_SOURCE}) AS assets
+        GROUP BY assets.asset_type
+        ORDER BY assets.asset_type ASC;
+    `;
+
+    try {
+        const [rows] = await pool.query(classQuery);
+
+        res.json({
+            status: 'ok',
+            data: rows.map((row) => ({
+                assetType: row.asset_type,
+                total: Number(row.total) || 0,
+            })),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 export default router;

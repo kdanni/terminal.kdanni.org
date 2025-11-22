@@ -80,3 +80,38 @@
   margin-bottom: 0;
   color: var(--color-text-muted);
 }
+
+.asset-class-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.overview-header h2 {
+  margin: 0.2rem 0;
+}
+
+.overview-header .lede {
+  margin: 0;
+  max-width: 70ch;
+}
+
+.link-card-meta {
+  font-size: 0.95rem;
+  color: var(--color-text-subtle);
+}

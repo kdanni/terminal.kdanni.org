@@ -1,4 +1,4 @@
-import type { Asset } from '../types';
+import type { Asset, AssetClassSummary } from '../types';
 
 type Pagination = {
   total: number;
@@ -134,6 +134,18 @@ const BASE_ASSETS: Asset[] = [
 let assets: Asset[] = BASE_ASSETS.map((asset) => ({ ...asset }));
 let nextWatchListId = Math.max(...assets.map((asset) => Number(asset.watchListId ?? 0))) + 1;
 
+function summarizeAssetClasses(): AssetClassSummary[] {
+  const totals = assets.reduce<Record<string, number>>((acc, asset) => {
+    const key = (asset.assetType ?? 'unknown').toLowerCase();
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(totals)
+    .map(([assetType, total]) => ({ assetType, total }))
+    .sort((a, b) => a.assetType.localeCompare(b.assetType));
+}
+
 function normalizeExchange(value?: string | null): string {
   if (value == null) {
     return '';
@@ -181,6 +193,10 @@ export function getAssetPage(search: string, page: number, pageSize: number): Pa
     data: pageItems,
     pagination: buildPagination(filtered.length, page, pageSize)
   };
+}
+
+export function getAssetClasses(): { data: AssetClassSummary[] } {
+  return { data: summarizeAssetClasses() };
 }
 
 export function toggleWatch(request: ToggleRequest): ToggleResult {

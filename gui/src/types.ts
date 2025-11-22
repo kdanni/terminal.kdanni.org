@@ -18,6 +18,11 @@ export type ToggleWatchRequest = {
   asset?: Asset;
 };
 
+export type AssetClassSummary = {
+  assetType: string;
+  total?: number;
+};
+
 export type WatchListEntry = {
   watchListId: string | number;
   symbol: string;
