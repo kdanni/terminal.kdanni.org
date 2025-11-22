@@ -59,6 +59,24 @@ function buildFilters(query) {
     params.push(`%${name.toLowerCase()}%`);
   }
 
+  const exchange = normalizeQueryValue(query.exchange);
+  if (exchange) {
+    conditions.push('LOWER(stocks.exchange) LIKE ?');
+    params.push(`%${exchange.toLowerCase()}%`);
+  }
+
+  const country = normalizeQueryValue(query.country);
+  if (country) {
+    conditions.push('LOWER(stocks.country) LIKE ?');
+    params.push(`%${country.toLowerCase()}%`);
+  }
+
+  const currency = normalizeQueryValue(query.currency);
+  if (currency) {
+    conditions.push('LOWER(stocks.currency) LIKE ?');
+    params.push(`%${currency.toLowerCase()}%`);
+  }
+
   const watched = normalizeQueryValue(query.watched);
   if (watched === 'true') {
     conditions.push('wl.active = 1');

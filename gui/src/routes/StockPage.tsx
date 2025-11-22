@@ -60,6 +60,9 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
   const [page, setPage] = useState(initialPage);
   const [tickerInput, setTickerInput] = useState(() => sanitizeFilterValue(searchParams.get('ticker') ?? ''));
   const [nameInput, setNameInput] = useState(() => sanitizeSearchTerm(searchParams.get('name') ?? ''));
+  const [exchangeInput, setExchangeInput] = useState(() => sanitizeFilterValue(searchParams.get('exchange') ?? ''));
+  const [countryInput, setCountryInput] = useState(() => sanitizeFilterValue(searchParams.get('country') ?? ''));
+  const [currencyInput, setCurrencyInput] = useState(() => sanitizeFilterValue(searchParams.get('currency') ?? ''));
 
   useEffect(() => {
     const paramPage = Number(searchParams.get('page'));
@@ -72,10 +75,16 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
   useEffect(() => {
     setTickerInput(sanitizeFilterValue(searchParams.get('ticker') ?? ''));
     setNameInput(sanitizeSearchTerm(searchParams.get('name') ?? ''));
+    setExchangeInput(sanitizeFilterValue(searchParams.get('exchange') ?? ''));
+    setCountryInput(sanitizeFilterValue(searchParams.get('country') ?? ''));
+    setCurrencyInput(sanitizeFilterValue(searchParams.get('currency') ?? ''));
   }, [searchParams]);
 
   const tickerFilter = useMemo(() => sanitizeFilterValue(searchParams.get('ticker') ?? ''), [searchParams]);
   const nameFilter = useMemo(() => sanitizeSearchTerm(searchParams.get('name') ?? ''), [searchParams]);
+  const exchangeFilter = useMemo(() => sanitizeFilterValue(searchParams.get('exchange') ?? ''), [searchParams]);
+  const countryFilter = useMemo(() => sanitizeFilterValue(searchParams.get('country') ?? ''), [searchParams]);
+  const currencyFilter = useMemo(() => sanitizeFilterValue(searchParams.get('currency') ?? ''), [searchParams]);
 
   useEffect(() => {
     if (!apiBaseUrl) {
@@ -93,6 +102,18 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
 
     if (nameFilter) {
       params.set('name', nameFilter);
+    }
+
+    if (exchangeFilter) {
+      params.set('exchange', exchangeFilter);
+    }
+
+    if (countryFilter) {
+      params.set('country', countryFilter);
+    }
+
+    if (currencyFilter) {
+      params.set('currency', currencyFilter);
     }
 
     const url = `${apiBaseUrl}/api/stocks?${params.toString()}`;
@@ -141,13 +162,26 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
     return () => {
       controller.abort();
     };
-  }, [apiBaseUrl, fetchWithAuth, nameFilter, page, reloadIndex, tickerFilter]);
+  }, [
+    apiBaseUrl,
+    countryFilter,
+    currencyFilter,
+    exchangeFilter,
+    fetchWithAuth,
+    nameFilter,
+    page,
+    reloadIndex,
+    tickerFilter
+  ]);
 
   const handleApplyFilters = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     const next = new URLSearchParams(searchParams);
     const sanitizedTicker = sanitizeFilterValue(tickerInput);
     const sanitizedName = sanitizeSearchTerm(nameInput);
+    const sanitizedExchange = sanitizeFilterValue(exchangeInput);
+    const sanitizedCountry = sanitizeFilterValue(countryInput);
+    const sanitizedCurrency = sanitizeFilterValue(currencyInput);
 
     if (sanitizedTicker) {
       next.set('ticker', sanitizedTicker);
@@ -161,6 +195,24 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
       next.delete('name');
     }
 
+    if (sanitizedExchange) {
+      next.set('exchange', sanitizedExchange);
+    } else {
+      next.delete('exchange');
+    }
+
+    if (sanitizedCountry) {
+      next.set('country', sanitizedCountry);
+    } else {
+      next.delete('country');
+    }
+
+    if (sanitizedCurrency) {
+      next.set('currency', sanitizedCurrency);
+    } else {
+      next.delete('currency');
+    }
+
     next.set('page', '1');
     setPage(1);
     setSearchParams(next);
@@ -171,11 +223,17 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
     const next = new URLSearchParams(searchParams);
     next.delete('ticker');
     next.delete('name');
+    next.delete('exchange');
+    next.delete('country');
+    next.delete('currency');
     next.set('page', '1');
     setPage(1);
     setSearchParams(next);
     setTickerInput('');
     setNameInput('');
+    setExchangeInput('');
+    setCountryInput('');
+    setCurrencyInput('');
     setReloadIndex((current) => current + 1);
   };
 
@@ -285,10 +343,15 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
     }
   };
 
-  const hasFilters = Boolean(searchParams.get('ticker') || searchParams.get('name'));
+  const hasFilters = Boolean(
+    searchParams.get('ticker') || searchParams.get('name') || searchParams.get('exchange') || searchParams.get('country') || searchParams.get('currency')
+  );
   const activeFiltersLabel = [
     searchParams.get('ticker') ? `Ticker contains "${searchParams.get('ticker')}"` : null,
-    searchParams.get('name') ? `Name contains "${searchParams.get('name')}"` : null
+    searchParams.get('name') ? `Name contains "${searchParams.get('name')}"` : null,
+    searchParams.get('exchange') ? `Exchange contains "${searchParams.get('exchange')}"` : null,
+    searchParams.get('country') ? `Country contains "${searchParams.get('country')}"` : null,
+    searchParams.get('currency') ? `Currency contains "${searchParams.get('currency')}"` : null
   ]
     .filter(Boolean)
     .join(' · ');
@@ -332,6 +395,36 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
               value={nameInput}
               onChange={(event) => setNameInput(event.target.value)}
               placeholder="e.g. Apple"
+            />
+          </label>
+          <label className="filter-field">
+            <span className="filter-label">Exchange</span>
+            <input
+              type="text"
+              name="exchange"
+              value={exchangeInput}
+              onChange={(event) => setExchangeInput(event.target.value)}
+              placeholder="e.g. NASDAQ"
+            />
+          </label>
+          <label className="filter-field">
+            <span className="filter-label">Country</span>
+            <input
+              type="text"
+              name="country"
+              value={countryInput}
+              onChange={(event) => setCountryInput(event.target.value)}
+              placeholder="e.g. United States"
+            />
+          </label>
+          <label className="filter-field">
+            <span className="filter-label">Currency</span>
+            <input
+              type="text"
+              name="currency"
+              value={currencyInput}
+              onChange={(event) => setCurrencyInput(event.target.value)}
+              placeholder="e.g. USD"
             />
           </label>
           <div className="inline-actions">
