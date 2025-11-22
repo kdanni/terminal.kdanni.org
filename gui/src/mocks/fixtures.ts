@@ -128,6 +128,36 @@ const BASE_ASSETS: Asset[] = [
     type: 'Equity Fund',
     watched: false,
     watchListId: null
+  },
+  {
+    symbol: 'EUR/USD',
+    name: 'EUR/USD',
+    assetType: 'forex',
+    currencyBase: 'EUR',
+    currencyQuote: 'USD',
+    type: 'Major',
+    watched: true,
+    watchListId: 3
+  },
+  {
+    symbol: 'USD/JPY',
+    name: 'USD/JPY',
+    assetType: 'forex',
+    currencyBase: 'USD',
+    currencyQuote: 'JPY',
+    type: 'Major',
+    watched: false,
+    watchListId: null
+  },
+  {
+    symbol: 'USD/TRY',
+    name: 'USD/TRY',
+    assetType: 'forex',
+    currencyBase: 'USD',
+    currencyQuote: 'TRY',
+    type: 'Exotic',
+    watched: false,
+    watchListId: null
   }
 ];
 
@@ -177,10 +207,76 @@ function filterAssets(search: string): Asset[] {
       asset.name,
       asset.exchange,
       asset.currency,
-      asset.country
+      asset.country,
+      asset.currencyBase,
+      asset.currencyQuote,
+      asset.type
     ]
       .filter((value): value is string => Boolean(value))
       .some((value) => value.toLowerCase().includes(terms));
+  });
+}
+
+function filterForexAssets({
+  search,
+  base,
+  quote,
+  group,
+  watched
+}: {
+  search?: string;
+  base?: string;
+  quote?: string;
+  group?: string;
+  watched?: 'true' | 'false' | 'any';
+}): Asset[] {
+  const normalizedSearch = (search ?? '').toLowerCase();
+  const normalizedBase = (base ?? '').toLowerCase();
+  const normalizedQuote = (quote ?? '').toLowerCase();
+  const normalizedGroup = (group ?? '').toLowerCase();
+  const watchedFilter = watched ?? 'any';
+
+  return assets.filter((asset) => {
+    if ((asset.assetType ?? '').toLowerCase() !== 'forex') {
+      return false;
+    }
+
+    if (watchedFilter === 'true' && !asset.watched) {
+      return false;
+    }
+
+    if (watchedFilter === 'false' && asset.watched) {
+      return false;
+    }
+
+    if (normalizedSearch) {
+      const matchesSearch = [
+        asset.symbol,
+        asset.currencyBase,
+        asset.currencyQuote,
+        asset.type
+      ]
+        .filter((value): value is string => Boolean(value))
+        .some((value) => value.toLowerCase().includes(normalizedSearch));
+
+      if (!matchesSearch) {
+        return false;
+      }
+    }
+
+    if (normalizedBase && !(asset.currencyBase ?? '').toLowerCase().includes(normalizedBase)) {
+      return false;
+    }
+
+    if (normalizedQuote && !(asset.currencyQuote ?? '').toLowerCase().includes(normalizedQuote)) {
+      return false;
+    }
+
+    if (normalizedGroup && !(asset.type ?? '').toLowerCase().includes(normalizedGroup)) {
+      return false;
+    }
+
+    return true;
   });
 }
 
@@ -197,6 +293,33 @@ export function getAssetPage(search: string, page: number, pageSize: number): Pa
 
 export function getAssetClasses(): { data: AssetClassSummary[] } {
   return { data: summarizeAssetClasses() };
+}
+
+export function getForexPage({
+  search = '',
+  base = '',
+  quote = '',
+  group = '',
+  watched = 'any',
+  page,
+  pageSize
+}: {
+  search?: string;
+  base?: string;
+  quote?: string;
+  group?: string;
+  watched?: 'true' | 'false' | 'any';
+  page: number;
+  pageSize: number;
+}): PaginatedAssets {
+  const filtered = filterForexAssets({ search, base, quote, group, watched });
+  const offset = Math.max(0, (page - 1) * pageSize);
+  const pageItems = filtered.slice(offset, offset + pageSize);
+
+  return {
+    data: pageItems,
+    pagination: buildPagination(filtered.length, page, pageSize)
+  };
 }
 
 export function toggleWatch(request: ToggleRequest): ToggleResult {

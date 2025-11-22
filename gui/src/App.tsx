@@ -10,6 +10,7 @@ import { logError } from './errorReporting';
 import { StockPage } from './routes/StockPage';
 import { EtfPage } from './routes/EtfPage';
 import { CryptoPage } from './routes/CryptoPage';
+import { ForexPage } from './routes/ForexPage';
 
 type AppProps = {
   apiBaseUrl: string;
@@ -76,6 +77,7 @@ const ProtectedWatchListPage = withPortalAuthentication(WatchListPage);
 const ProtectedStockPage = withPortalAuthentication(StockPage);
 const ProtectedEtfPage = withPortalAuthentication(EtfPage);
 const ProtectedCryptoPage = withPortalAuthentication(CryptoPage);
+const ProtectedForexPage = withPortalAuthentication(ForexPage);
 
 function App({ apiBaseUrl }: AppProps): JSX.Element {
   const { error: authError } = useAuth0();
@@ -91,6 +93,7 @@ function App({ apiBaseUrl }: AppProps): JSX.Element {
             <Route path="stock" element={<ProtectedStockPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="etf" element={<ProtectedEtfPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="crypto" element={<ProtectedCryptoPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="forex" element={<ProtectedForexPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="watchlist" element={<ProtectedWatchListPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="*" element={<Navigate to="/catalog" replace />} />
           </Route>

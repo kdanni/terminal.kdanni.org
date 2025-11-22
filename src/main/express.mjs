@@ -11,6 +11,7 @@ import exchangeCatalog from '../api/exchanges/route.mjs';
 import meApi from '../api/me/route.mjs';
 import ohlcvApi from '../api/ohlcv/route.mjs';
 import watchListApi from '../api/watch-list/route.mjs';
+import forexApi from '../api/forex/route.mjs';
 import wellKnown from '../api/well-known/route.mjs';
 
 const app = express();
@@ -71,6 +72,7 @@ app.use('/api/exchanges', exchangeCatalog);
 app.use('/api/me', meApi);
 app.use('/api/ohlcv', ohlcvApi);
 app.use('/api/watch-list', watchListApi);
+app.use('/api/forex', forexApi);
 
 app.use(errorHandler);
 
