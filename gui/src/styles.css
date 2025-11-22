@@ -132,6 +132,29 @@ body {
   opacity: 0.9;
 }
 
+.portal-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  grid-column: 1 / span 2;
+}
+
+.portal-nav-link {
+  color: var(--color-text-contrast);
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-text-contrast) 20%, transparent);
+  background: color-mix(in srgb, var(--color-surface-strong) 70%, #0f172a 30%);
+  font-weight: 600;
+}
+
+.portal-nav-link.is-active {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: color-mix(in srgb, var(--color-accent) 75%, transparent);
+}
+
 .auth-actions {
   display: flex;
   align-items: center;
@@ -1159,6 +1182,19 @@ body {
   vertical-align: middle;
 }
 
+.watch-toggle-cell {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
 .watch-status-chip {
   display: inline-flex;
   align-items: center;
@@ -1171,6 +1207,11 @@ body {
 .watch-status-chip.chip-active {
   background: color-mix(in srgb, #16a34a 14%, var(--color-surface));
   color: #166534;
+}
+
+.watch-status-chip.chip-inactive {
+  background: color-mix(in srgb, #9ca3af 20%, var(--color-surface));
+  color: #374151;
 }
 
 .watch-status-chip.chip-pending {

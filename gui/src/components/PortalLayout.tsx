@@ -25,6 +25,20 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
         <p className="header-lede">
           Streamlined, wide-screen canvas ready for the next iterations of the catalog experience.
         </p>
+        <nav className="portal-nav" aria-label="Primary navigation">
+          <NavLink
+            to="/catalog"
+            className={({ isActive }) => `portal-nav-link${isActive ? ' is-active' : ''}`}
+          >
+            Catalog
+          </NavLink>
+          <NavLink
+            to="/watchlist"
+            className={({ isActive }) => `portal-nav-link${isActive ? ' is-active' : ''}`}
+          >
+            Watch list
+          </NavLink>
+        </nav>
         <div className="auth-actions">
           <button
             type="button"
