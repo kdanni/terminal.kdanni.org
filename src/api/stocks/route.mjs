@@ -37,6 +37,18 @@ function buildFilters(query) {
   const conditions = [];
   const params = [];
 
+  const normalizeListValues = (value) => {
+    const normalized = normalizeQueryValue(value);
+    if (!normalized) {
+      return [];
+    }
+
+    return normalized
+      .split(/[|,]/)
+      .map((part) => normalizeQueryValue(part))
+      .filter(Boolean);
+  };
+
   const search = normalizeQueryValue(query.search ?? query.q);
   if (search) {
     const like = `%${search.toLowerCase()}%`;
@@ -61,8 +73,15 @@ function buildFilters(query) {
 
   const exchange = normalizeQueryValue(query.exchange);
   if (exchange) {
-    conditions.push('LOWER(stocks.exchange) LIKE ?');
-    params.push(`%${exchange.toLowerCase()}%`);
+    const exchanges = normalizeListValues(exchange);
+    if (exchanges.length > 1) {
+      const placeholders = exchanges.map(() => 'LOWER(stocks.exchange) LIKE ?').join(' OR ');
+      conditions.push(`(${placeholders})`);
+      params.push(...exchanges.map((value) => `%${value.toLowerCase()}%`));
+    } else {
+      conditions.push('LOWER(stocks.exchange) LIKE ?');
+      params.push(`%${exchange.toLowerCase()}%`);
+    }
   }
 
   const country = normalizeQueryValue(query.country);
