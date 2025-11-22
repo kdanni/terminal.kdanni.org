@@ -39,6 +39,12 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
             Stocks
           </NavLink>
           <NavLink
+            to="/etf"
+            className={({ isActive }) => `portal-nav-link${isActive ? ' is-active' : ''}`}
+          >
+            ETFs
+          </NavLink>
+          <NavLink
             to="/watchlist"
             className={({ isActive }) => `portal-nav-link${isActive ? ' is-active' : ''}`}
           >
