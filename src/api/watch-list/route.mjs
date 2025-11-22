@@ -2,6 +2,7 @@ import express from 'express';
 import {
     createAssetWatchListEntry,
     getAssetWatchListEntryBySymbol,
+    listAssetWatchListEntries,
     setAssetWatchListActiveStatus,
 } from '../../postgres/asset-watch-list.mjs';
 import {
@@ -64,6 +65,30 @@ function formatPgEntry(entry) {
     };
 }
 
+function formatWatchListEntry(entry) {
+    return {
+        watchListId: entry.id,
+        symbol: entry.symbol,
+        exchange: entry.exchange ?? null,
+        watched: Boolean(entry.active),
+        updatedAt: entry.updated_at ? new Date(entry.updated_at).toISOString() : null,
+    };
+}
+
+function parsePositiveInteger(value, defaultValue) {
+    if (value === undefined) {
+        return defaultValue;
+    }
+
+    const parsed = Number(value);
+
+    if (!Number.isFinite(parsed) || parsed < 1) {
+        return null;
+    }
+
+    return Math.floor(parsed);
+}
+
 function formatMysqlEntry(entry) {
     if (!entry) {
         return null;
@@ -78,6 +103,36 @@ function formatMysqlEntry(entry) {
         updatedAt: entry.updated_at ? entry.updated_at.toISOString() : null,
     };
 }
+
+router.get('/', async (req, res, next) => {
+    const page = parsePositiveInteger(req.query.page, 1);
+    const pageSize = parsePositiveInteger(req.query.pageSize, 50);
+
+    if (page === null || pageSize === null) {
+        return res.status(400).json({
+            status: 'error',
+            message: 'Invalid pagination parameters.',
+        });
+    }
+
+    try {
+        const entries = await listAssetWatchListEntries();
+        const offset = Math.max(0, (page - 1) * pageSize);
+        const slicedEntries = entries.slice(offset, offset + pageSize);
+
+        res.json({
+            status: 'ok',
+            data: slicedEntries.map(formatWatchListEntry),
+            pagination: {
+                total: entries.length,
+                page,
+                pageSize,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+});
 
 async function syncMysqlWatchList({ symbol, exchange, active }) {
     const connection = await getWatchListConnection();

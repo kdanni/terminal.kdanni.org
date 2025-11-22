@@ -5,6 +5,7 @@ import { GlobalLoadingShell } from './components/GlobalLoadingShell';
 import { LoginRedirectPage } from './components/LoginRedirectPage';
 import { PortalLayout } from './components/PortalLayout';
 import { WelcomePage } from './components/WelcomePage';
+import { WatchListPage } from './components/WatchListPage';
 import { logError } from './errorReporting';
 
 type AppProps = {
@@ -68,6 +69,7 @@ function withPortalAuthentication<P extends object>(component: ComponentType<P>)
 }
 
 const ProtectedWelcomePage = withPortalAuthentication(WelcomePage);
+const ProtectedWatchListPage = withPortalAuthentication(WatchListPage);
 
 function App({ apiBaseUrl }: AppProps): JSX.Element {
   const { error: authError } = useAuth0();
@@ -80,6 +82,7 @@ function App({ apiBaseUrl }: AppProps): JSX.Element {
           <Route element={<PortalLayout authError={authError} />}>
             <Route index element={<Navigate to="/catalog" replace />} />
             <Route path="catalog" element={<ProtectedWelcomePage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="watchlist" element={<ProtectedWatchListPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="*" element={<Navigate to="/catalog" replace />} />
           </Route>
         </Routes>
