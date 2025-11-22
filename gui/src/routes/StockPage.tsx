@@ -10,6 +10,18 @@ import type { Asset, ToggleWatchRequest } from '../types';
 
 const DEFAULT_PAGE_SIZE = 25;
 
+type StockFilterPreset = {
+  label: string;
+  description: string;
+  filters: Partial<{
+    ticker: string;
+    name: string;
+    exchange: string;
+    country: string;
+    currency: string;
+  }>;
+};
+
 function normalizeExchangeValue(value?: string | null): string {
   if (value == null) {
     return '';
@@ -63,6 +75,21 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
   const [exchangeInput, setExchangeInput] = useState(() => sanitizeFilterValue(searchParams.get('exchange') ?? ''));
   const [countryInput, setCountryInput] = useState(() => sanitizeFilterValue(searchParams.get('country') ?? ''));
   const [currencyInput, setCurrencyInput] = useState(() => sanitizeFilterValue(searchParams.get('currency') ?? ''));
+  const filterPresets = useMemo<StockFilterPreset[]>(
+    () => [
+      {
+        label: 'US stocks',
+        description: 'Focus on listings from the United States with USD quotes.',
+        filters: { country: 'United States', currency: 'USD' }
+      },
+      {
+        label: 'Stocks by top exchanges',
+        description: 'Show equities from major US exchanges like NYSE and NASDAQ.',
+        filters: { exchange: 'NYSE,NASDAQ', country: 'United States' }
+      }
+    ],
+    []
+  );
 
   useEffect(() => {
     const paramPage = Number(searchParams.get('page'));
@@ -237,6 +264,56 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
     setReloadIndex((current) => current + 1);
   };
 
+  const applyPresetFilters = (preset: StockFilterPreset): void => {
+    const next = new URLSearchParams(searchParams);
+
+    const sanitizedTicker = sanitizeFilterValue(preset.filters.ticker ?? '');
+    const sanitizedName = sanitizeSearchTerm(preset.filters.name ?? '');
+    const sanitizedExchange = sanitizeFilterValue(preset.filters.exchange ?? '');
+    const sanitizedCountry = sanitizeFilterValue(preset.filters.country ?? '');
+    const sanitizedCurrency = sanitizeFilterValue(preset.filters.currency ?? '');
+
+    if (sanitizedTicker) {
+      next.set('ticker', sanitizedTicker);
+    } else {
+      next.delete('ticker');
+    }
+
+    if (sanitizedName) {
+      next.set('name', sanitizedName);
+    } else {
+      next.delete('name');
+    }
+
+    if (sanitizedExchange) {
+      next.set('exchange', sanitizedExchange);
+    } else {
+      next.delete('exchange');
+    }
+
+    if (sanitizedCountry) {
+      next.set('country', sanitizedCountry);
+    } else {
+      next.delete('country');
+    }
+
+    if (sanitizedCurrency) {
+      next.set('currency', sanitizedCurrency);
+    } else {
+      next.delete('currency');
+    }
+
+    next.set('page', '1');
+    setPage(1);
+    setSearchParams(next);
+    setTickerInput(sanitizedTicker);
+    setNameInput(sanitizedName);
+    setExchangeInput(sanitizedExchange);
+    setCountryInput(sanitizedCountry);
+    setCurrencyInput(sanitizedCurrency);
+    setReloadIndex((current) => current + 1);
+  };
+
   const goToPreviousPage = (): void => {
     const nextPage = Math.max(page - 1, 1);
     const next = new URLSearchParams(searchParams);
@@ -376,6 +453,20 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
       </header>
 
       <div className="filter-panel" aria-label="Stock filters">
+        <div className="quick-filters" role="list" aria-label="Preset filters">
+          {filterPresets.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              className="quick-filter-pill"
+              onClick={() => applyPresetFilters(preset)}
+              role="listitem"
+            >
+              <span className="pill-title">{preset.label}</span>
+              <span className="pill-subtitle">{preset.description}</span>
+            </button>
+          ))}
+        </div>
         <form className="filter-grid" onSubmit={handleApplyFilters}>
           <label className="filter-field">
             <span className="filter-label">Ticker</span>
