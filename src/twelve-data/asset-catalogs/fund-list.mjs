@@ -1,8 +1,15 @@
 import got from 'got';
-import { chain } from 'stream-chain';
-import { parser } from 'stream-json';
-import { pick } from 'stream-json/filters/Pick.js';
-import { streamArray } from 'stream-json/streamers/StreamArray.js';
+
+// CommonJS modules can always be imported via the default export:
+import sch from 'stream-chain';
+const { chain } = sch;
+import sj from 'stream-json';
+const { parser } = sj;
+import sjPick from 'stream-json/filters/Pick.js';
+const { pick } = sjPick;
+import sjArray from 'stream-json/streamers/StreamArray.js';
+const { streamArray } = sjArray;
+
 import { pool } from '../../mysql/mysql2-env-connection.mjs';
 import { withTwelveDataApiKey } from '../api-key.mjs';
 
