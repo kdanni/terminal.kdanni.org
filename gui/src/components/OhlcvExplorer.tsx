@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, useApiClient } from '../apiClient';
+import type { WatchListEntry } from '../types';
 
 const DEFAULT_SYMBOLS = ['AAPL'];
 const DEFAULT_INTERVAL = '1d';
@@ -20,6 +21,8 @@ const DEFAULT_RANGE = '3M';
 const CACHE_TTL_MS = 2 * 60 * 1000;
 const MAX_SYMBOLS = 4;
 const PAGE_SIZE = 500;
+const WATCH_LIST_PAGE_SIZE = 200;
+const WATCH_LIST_STORAGE_KEY = 'ohlcv:lastWatchListSelection';
 
 const LINE_COLORS = ['#2563eb', '#f97316', '#10b981', '#a855f7', '#ef4444'];
 
@@ -131,6 +134,20 @@ function parseSymbols(input: string): string[] {
         .filter(Boolean)
     )
   ).slice(0, MAX_SYMBOLS);
+}
+
+function getStoredWatchListSymbols(): string[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const stored = window.localStorage.getItem(WATCH_LIST_STORAGE_KEY);
+    return stored ? parseSymbols(stored) : [];
+  } catch (error) {
+    console.error('Unable to read stored watch list selection', error);
+    return [];
+  }
 }
 
 function sanitizeCandles(raw: Candle[]): Candle[] {
@@ -328,8 +345,18 @@ function ChartTooltip({ payload, label }: any): JSX.Element | null {
 }
 
 export function OhlcvExplorer({ apiBaseUrl }: OhlcvExplorerProps): JSX.Element {
-  const [symbolInput, setSymbolInput] = useState(DEFAULT_SYMBOLS.join(', '));
-  const [selectedSymbols, setSelectedSymbols] = useState<string[]>(DEFAULT_SYMBOLS);
+  const [symbolInput, setSymbolInput] = useState(() => {
+    const stored = getStoredWatchListSymbols();
+    return (stored.length ? stored : DEFAULT_SYMBOLS).join(', ');
+  });
+  const [selectedSymbols, setSelectedSymbols] = useState<string[]>(() => {
+    const stored = getStoredWatchListSymbols();
+    return stored.length ? stored : DEFAULT_SYMBOLS;
+  });
+  const [selectedWatchSymbol, setSelectedWatchSymbol] = useState<string>(() => {
+    const stored = getStoredWatchListSymbols();
+    return stored[0] ?? '';
+  });
   const [interval, setInterval] = useState(DEFAULT_INTERVAL);
   const [range, setRange] = useState(DEFAULT_RANGE);
   const [view, setView] = useState<'candles' | 'line'>('candles');
@@ -338,6 +365,9 @@ export function OhlcvExplorer({ apiBaseUrl }: OhlcvExplorerProps): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Ready to visualize OHLCV data.');
+  const [watchListEntries, setWatchListEntries] = useState<WatchListEntry[]>([]);
+  const [watchListLoading, setWatchListLoading] = useState(false);
+  const [watchListError, setWatchListError] = useState<Error | null>(null);
 
   const cacheRef = useRef<Map<string, { fetchedAt: number; series: OhlcvSeries }>>(new Map());
   const { fetchWithAuth } = useApiClient(apiBaseUrl);
@@ -391,6 +421,64 @@ export function OhlcvExplorer({ apiBaseUrl }: OhlcvExplorerProps): JSX.Element {
   useEffect(() => {
     let cancelled = false;
 
+    async function loadWatchList(): Promise<void> {
+      setWatchListLoading(true);
+      setWatchListError(null);
+
+      try {
+        const response = await fetchWithAuth(
+          `${apiBaseUrl}/api/watch-list?page=1&pageSize=${WATCH_LIST_PAGE_SIZE}`
+        );
+
+        if (!response.ok) {
+          throw new ApiError(`Failed to load watch list: ${response.status}`, response.status);
+        }
+
+        const payload = (await response.json()) as { data?: WatchListEntry[] };
+        const data = Array.isArray(payload?.data) ? payload.data : null;
+
+        if (!data) {
+          throw new ApiError('Unexpected response from the watch list API.');
+        }
+
+        const watchedEntries = data.filter((entry) => entry.watched);
+        if (cancelled) return;
+
+        setWatchListEntries(watchedEntries);
+
+        if (selectedWatchSymbol && !watchedEntries.some((entry) => entry.symbol === selectedWatchSymbol)) {
+          setSelectedWatchSymbol('');
+        }
+      } catch (watchError) {
+        if (cancelled) return;
+
+        const normalizedError =
+          watchError instanceof ApiError
+            ? watchError
+            : watchError instanceof Error
+              ? watchError
+              : new Error('Unable to load the watch list right now.');
+
+        console.error(watchError);
+        setWatchListEntries([]);
+        setWatchListError(normalizedError);
+      } finally {
+        if (!cancelled) {
+          setWatchListLoading(false);
+        }
+      }
+    }
+
+    void loadWatchList();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl, fetchWithAuth, selectedWatchSymbol]);
+
+  useEffect(() => {
+    let cancelled = false;
+
     async function loadData(): Promise<void> {
       if (!selectedSymbols.length) {
         setSeries([]);
@@ -439,6 +527,36 @@ export function OhlcvExplorer({ apiBaseUrl }: OhlcvExplorerProps): JSX.Element {
 
   const chart = useMemo(() => buildChartRows(series, overlays), [series, overlays]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      if (selectedWatchSymbol) {
+        window.localStorage.setItem(WATCH_LIST_STORAGE_KEY, selectedWatchSymbol);
+      } else {
+        window.localStorage.removeItem(WATCH_LIST_STORAGE_KEY);
+      }
+    } catch (error) {
+      console.error('Unable to persist watch list selection', error);
+    }
+  }, [selectedWatchSymbol]);
+
+  const handleWatchListSelection = (symbol: string): void => {
+    if (!symbol) {
+      setSelectedWatchSymbol('');
+      return;
+    }
+
+    const mergedSymbols = [symbol, ...parseSymbols(symbolInput)];
+    const uniqueSymbols = Array.from(new Set(mergedSymbols)).slice(0, MAX_SYMBOLS);
+
+    setSelectedWatchSymbol(symbol);
+    setSymbolInput(uniqueSymbols.join(', '));
+    setSelectedSymbols(uniqueSymbols);
+  };
+
   const handleSubmit = (event: React.FormEvent): void => {
     event.preventDefault();
     const parsed = parseSymbols(symbolInput);
@@ -474,6 +592,30 @@ export function OhlcvExplorer({ apiBaseUrl }: OhlcvExplorerProps): JSX.Element {
             onChange={(event) => setSymbolInput(event.target.value)}
           />
           <p className="hint">Supports up to {MAX_SYMBOLS} symbols for comparison. First symbol becomes the primary candle.</p>
+        </div>
+
+        <div className="control-group">
+          <label htmlFor="watch-list">Watch list</label>
+          <select
+            id="watch-list"
+            className="select-input"
+            value={selectedWatchSymbol}
+            onChange={(event) => handleWatchListSelection(event.target.value)}
+            disabled={watchListLoading || !watchListEntries.length}
+          >
+            <option value="">{watchListLoading ? 'Loading watch list…' : 'Choose a saved asset'}</option>
+            {watchListEntries.map((entry) => (
+              <option key={`${entry.symbol}-${entry.exchange ?? 'na'}`} value={entry.symbol}>
+                {entry.symbol}
+                {entry.exchange ? ` • ${entry.exchange}` : ''}
+              </option>
+            ))}
+          </select>
+          {watchListError ? (
+            <p className="hint" role="alert">{watchListError.message}</p>
+          ) : (
+            <p className="hint">Add a watched symbol to the input above. Your last choice is remembered.</p>
+          )}
         </div>
 
         <div className="control-row">
