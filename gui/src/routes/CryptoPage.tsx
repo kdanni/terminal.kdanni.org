@@ -253,146 +253,163 @@ export function CryptoPage({ apiBaseUrl }: CryptoPageProps): JSX.Element {
     []
   );
 
+  const hasFilters = Boolean(
+    searchFilter || baseFilter || quoteFilter || exchangeFilter || (watchedFilter !== 'any')
+  );
+  const activeFiltersLabel = [
+    searchFilter ? `Search: "${searchFilter}"` : null,
+    baseFilter ? `Base: "${baseFilter}"` : null,
+    quoteFilter ? `Quote: "${quoteFilter}"` : null,
+    exchangeFilter ? `Exchange: "${exchangeFilter}"` : null,
+    watchedFilter !== 'any' ? `Watched: ${watchedFilter}` : null
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
-    <div className="page-stack">
+    <section className="page-shell">
       <Breadcrumbs items={breadcrumbs} />
       <header className="page-header">
-        <div>
-          <p className="eyebrow">Digital assets</p>
-          <h1>Crypto pairs</h1>
-          <p className="app-subtle">
-            Browse the cryptocurrency pairs we ingest from Twelve Data with quick filters for base/quote currencies and venue availability.
-          </p>
-          <div className="meta-grid">
-            <span>Latency: {latencyMs != null ? `${latencyMs}ms` : '—'}</span>
-            <span>Updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}</span>
-            <span>Total pairs: {totalCount || '—'}</span>
-          </div>
-        </div>
-        <div className="button-row">
-          <button type="button" className="secondary-button" onClick={() => setReloadIndex((i) => i + 1)}>
-            Refresh
-          </button>
+        <p className="page-kicker">Catalog</p>
+        <h1>Crypto pairs</h1>
+        <p className="app-description">
+          Browse the cryptocurrency pairs we ingest from Twelve Data with quick filters for base/quote currencies and venue availability.
+        </p>
+        <div className="catalog-meta" aria-live="polite">
+          <span className="meta-chip">Page {page}</span>
+          {latencyMs != null ? <span className="meta-chip">API latency: {latencyMs} ms</span> : null}
+          {lastUpdated ? <span className="meta-chip">Updated {lastUpdated.toLocaleTimeString()}</span> : null}
         </div>
       </header>
 
-      <section className="card">
-        <form className="filter-grid" onSubmit={handleSubmit}>
-          <label className="input-field">
-            <span>Search</span>
+      <form className="filter-panel" onSubmit={handleSubmit} aria-label="Crypto filters">
+        <div className="filter-grid">
+          <label className="filter-field">
+            <span className="filter-label">Search</span>
             <input
               type="search"
               name="search"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Symbol or currency"
+              className="search-input"
             />
           </label>
-          <label className="input-field">
-            <span>Base currency</span>
+          <label className="filter-field">
+            <span className="filter-label">Base currency</span>
             <input
               type="text"
               name="base"
               value={baseInput}
               onChange={(event) => setBaseInput(event.target.value)}
               placeholder="e.g. Bitcoin"
+              className="search-input"
             />
           </label>
-          <label className="input-field">
-            <span>Quote currency</span>
+          <label className="filter-field">
+            <span className="filter-label">Quote currency</span>
             <input
               type="text"
               name="quote"
               value={quoteInput}
               onChange={(event) => setQuoteInput(event.target.value)}
               placeholder="e.g. US Dollar"
+              className="search-input"
             />
           </label>
-          <label className="input-field">
-            <span>Exchange</span>
+          <label className="filter-field">
+            <span className="filter-label">Exchange</span>
             <input
               type="text"
               name="exchange"
               value={exchangeInput}
               onChange={(event) => setExchangeInput(event.target.value)}
               placeholder="Any available venue"
+              className="search-input"
             />
           </label>
-          <label className="input-field">
-            <span>Watch status</span>
+          <label className="filter-field">
+            <span className="filter-label">Watch status</span>
             <select
               name="watched"
               value={watchFilter}
               onChange={(event) => setWatchFilter(event.target.value)}
+              className="search-input"
             >
               <option value="any">Any</option>
               <option value="true">Watching</option>
               <option value="false">Not watching</option>
             </select>
           </label>
-          <div className="input-actions">
-            <button type="submit" className="primary-button">
-              Apply filters
-            </button>
-            <button type="button" className="ghost-button" onClick={handleClear}>
-              Clear
-            </button>
-          </div>
-        </form>
-
-        {error ? (
-          <div role="alert" className="error-message">
-            {error.message || 'Unable to load crypto pairs right now.'}
-          </div>
-        ) : null}
-
-        {actionError ? (
-          <div role="alert" className="error-message">
-            {actionError.message || 'Unable to update watch preferences.'}
-          </div>
-        ) : null}
-
-        <CryptoTable
-          assets={assets}
-          loading={loading}
-          pendingWatchUpdates={pendingWatchUpdates}
-          onToggleWatch={handleToggleWatch}
-          onRetry={() => setReloadIndex((i) => i + 1)}
-          totalCount={totalCount}
-        />
-
-        <div className="pagination">
-          <button
-            type="button"
-            className="ghost-button"
-            disabled={page <= 1}
-            onClick={() => {
-              const nextPage = Math.max(1, page - 1);
-              setPage(nextPage);
-              updateParams(nextPage);
-            }}
-          >
-            Previous
+        </div>
+        <div className="inline-actions">
+          <button type="submit" className="primary-button">
+            Apply filters
           </button>
-          <span>
-            Page {page} of {Math.max(totalPages, 1)}
-          </span>
-          <button
-            type="button"
-            className="ghost-button"
-            disabled={page >= totalPages && totalPages > 0}
-            onClick={() => {
-              const nextPage = totalPages > 0 ? Math.min(totalPages, page + 1) : page + 1;
-              setPage(nextPage);
-              updateParams(nextPage);
-            }}
-          >
-            Next
+          <button type="button" className="secondary-button" onClick={handleClear}>
+            Reset
           </button>
         </div>
-      </section>
+        {hasFilters ? <p className="app-subtle">Active filters: {activeFiltersLabel}</p> : null}
+      </form>
+
+      {error ? (
+        <div role="alert" className="error-message">
+          {error.message || 'Unable to load crypto pairs right now.'}
+          <div className="inline-actions">
+            <button type="button" className="secondary-button" onClick={() => setReloadIndex((i) => i + 1)}>
+              Retry request
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {actionError ? (
+        <div role="alert" className="error-message">
+          {actionError.message || 'Unable to update watch preferences.'}
+        </div>
+      ) : null}
 
       <GlobalLoadingShell visible={loading && assets.length === 0} message="Loading crypto catalog…" />
-    </div>
+
+      <CryptoTable
+        assets={assets}
+        loading={loading}
+        pendingWatchUpdates={pendingWatchUpdates}
+        onToggleWatch={handleToggleWatch}
+        onRetry={() => setReloadIndex((i) => i + 1)}
+        totalCount={totalCount}
+      />
+
+      <footer className="pagination" aria-label="Pagination">
+        <button
+          type="button"
+          className="pagination-button"
+          disabled={loading || page <= 1}
+          onClick={() => {
+            const nextPage = Math.max(1, page - 1);
+            setPage(nextPage);
+            updateParams(nextPage);
+          }}
+        >
+          Previous
+        </button>
+        <span className="pagination-status">
+          Page {page} of {Math.max(totalPages, 1)}
+        </span>
+        <button
+          type="button"
+          className="pagination-button"
+          disabled={loading || (page >= totalPages && totalPages > 0)}
+          onClick={() => {
+            const nextPage = totalPages > 0 ? Math.min(totalPages, page + 1) : page + 1;
+            setPage(nextPage);
+            updateParams(nextPage);
+          }}
+        >
+          Next
+        </button>
+      </footer>
+    </section>
   );
 }

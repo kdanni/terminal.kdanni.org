@@ -8,6 +8,7 @@ import { ThemeProvider } from './theme';
 import { createAuth0Config } from './auth/config';
 import { initErrorReporting } from './errorReporting';
 import { startUptimeHeartbeat } from './monitoring';
+import { Auth0Provider as MockAuth0Provider } from './testing/mockAuth0';
 
 async function bootstrap(): Promise<void> {
   const rootElement = document.getElementById('root');
@@ -37,10 +38,15 @@ async function bootstrap(): Promise<void> {
 
     const auth0Config = createAuth0Config(env);
 
+    const AuthProvider = import.meta.env.DEV && import.meta.env.VITE_USE_MSW === 'true'
+      ? MockAuth0Provider
+      : Auth0Provider;
+
     ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
         <ThemeProvider>
-          <Auth0Provider
+          {/* @ts-expect-error -- Auth0Provider types are slightly incompatible between mock and real */}
+          <AuthProvider
             domain={auth0Config.domain}
             clientId={auth0Config.clientId}
             authorizationParams={{
@@ -51,7 +57,7 @@ async function bootstrap(): Promise<void> {
             useRefreshTokens={auth0Config.useRefreshTokens}
           >
             <App apiBaseUrl={env.VITE_API_BASE_URL} />
-          </Auth0Provider>
+          </AuthProvider>
         </ThemeProvider>
       </React.StrictMode>
     );

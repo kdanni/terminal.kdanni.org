@@ -6,6 +6,11 @@ export type PortalLayoutProps = {
   authError?: Error | null;
 };
 
+export type PortalOutletContext = {
+  globalSearch: string;
+  setGlobalSearch: (term: string) => void;
+};
+
 export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
   const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
   const { resolvedTheme, toggleTheme } = useTheme();
