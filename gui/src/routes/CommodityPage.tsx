@@ -346,51 +346,49 @@ export function CommodityPage({ apiBaseUrl }: CommodityPageProps): JSX.Element {
         </div>
       </header>
 
-      <form className="filter-panel" onSubmit={handleSubmit} aria-label="Commodity filters">
-        <div className="filter-grid">
-          <label className="filter-field">
-            <span className="filter-label">Ticker</span>
-            <input
-              type="text"
-              value={tickerInput}
-              onChange={(event) => setTickerInput(event.target.value)}
-              placeholder="GC, SI, CL…"
-              className="search-input"
-            />
-          </label>
-          <label className="filter-field">
-            <span className="filter-label">Name</span>
-            <input
-              type="search"
-              value={nameInput}
-              onChange={(event) => setNameInput(event.target.value)}
-              placeholder="Gold, WTI, Copper…"
-              className="search-input"
-            />
-          </label>
-          <label className="filter-field">
-            <span className="filter-label">Category</span>
-            <input
-              type="text"
-              value={categoryInput}
-              onChange={(event) => setCategoryInput(event.target.value)}
-              placeholder="Metals, Energy, Agriculture…"
-              className="search-input"
-            />
-          </label>
-          <label className="filter-field">
-            <span className="filter-label">Watch status</span>
-            <select
-              value={watchFilter}
-              onChange={(event) => setWatchFilter(event.target.value)}
-              className="search-input"
-            >
-              <option value="any">Any</option>
-              <option value="true">Watching</option>
-              <option value="false">Not watching</option>
-            </select>
-          </label>
-        </div>
+      <form className="filter-grid" onSubmit={handleSubmit} aria-label="Commodity filters">
+        <label className="filter-field">
+          <span className="filter-label">Ticker</span>
+          <input
+            type="text"
+            value={tickerInput}
+            onChange={(event) => setTickerInput(event.target.value)}
+            placeholder="GC, SI, CL…"
+            className="search-input"
+          />
+        </label>
+        <label className="filter-field">
+          <span className="filter-label">Name</span>
+          <input
+            type="search"
+            value={nameInput}
+            onChange={(event) => setNameInput(event.target.value)}
+            placeholder="Gold, WTI, Copper…"
+            className="search-input"
+          />
+        </label>
+        <label className="filter-field">
+          <span className="filter-label">Category</span>
+          <input
+            type="text"
+            value={categoryInput}
+            onChange={(event) => setCategoryInput(event.target.value)}
+            placeholder="Metals, Energy, Agriculture…"
+            className="search-input"
+          />
+        </label>
+        <label className="filter-field">
+          <span className="filter-label">Watch status</span>
+          <select
+            value={watchFilter}
+            onChange={(event) => setWatchFilter(event.target.value)}
+            className="search-input"
+          >
+            <option value="any">Any</option>
+            <option value="true">Watching</option>
+            <option value="false">Not watching</option>
+          </select>
+        </label>
         <div className="inline-actions">
           <button type="submit" className="primary-button">
             Apply filters

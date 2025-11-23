@@ -281,66 +281,64 @@ export function ForexPage({ apiBaseUrl }: ForexPageProps): JSX.Element {
         </div>
       </header>
 
-      <form className="filter-panel" onSubmit={handleSubmit} aria-label="Forex filters">
-        <div className="filter-grid">
-          <label className="filter-field">
-            <span className="filter-label">Search</span>
-            <input
-              type="search"
-              name="search"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Symbol or currency"
-              className="search-input"
-            />
-          </label>
-          <label className="filter-field">
-            <span className="filter-label">Base currency</span>
-            <input
-              type="text"
-              name="base"
-              value={baseInput}
-              onChange={(event) => setBaseInput(event.target.value)}
-              placeholder="e.g. USD"
-              className="search-input"
-            />
-          </label>
-          <label className="filter-field">
-            <span className="filter-label">Quote currency</span>
-            <input
-              type="text"
-              name="quote"
-              value={quoteInput}
-              onChange={(event) => setQuoteInput(event.target.value)}
-              placeholder="e.g. JPY"
-              className="search-input"
-            />
-          </label>
-          <label className="filter-field">
-            <span className="filter-label">Pair group</span>
-            <input
-              type="text"
-              name="group"
-              value={groupInput}
-              onChange={(event) => setGroupInput(event.target.value)}
-              placeholder="Major, Minor, Exotic"
-              className="search-input"
-            />
-          </label>
-          <label className="filter-field">
-            <span className="filter-label">Watch status</span>
-            <select
-              name="watched"
-              value={watchFilter}
-              onChange={(event) => setWatchFilter(event.target.value)}
-              className="search-input"
-            >
-              <option value="any">Any</option>
-              <option value="true">Watching</option>
-              <option value="false">Not watching</option>
-            </select>
-          </label>
-        </div>
+      <form className="filter-grid" onSubmit={handleSubmit} aria-label="Forex filters">
+        <label className="filter-field">
+          <span className="filter-label">Search</span>
+          <input
+            type="search"
+            name="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Symbol or currency"
+            className="search-input"
+          />
+        </label>
+        <label className="filter-field">
+          <span className="filter-label">Base currency</span>
+          <input
+            type="text"
+            name="base"
+            value={baseInput}
+            onChange={(event) => setBaseInput(event.target.value)}
+            placeholder="e.g. USD"
+            className="search-input"
+          />
+        </label>
+        <label className="filter-field">
+          <span className="filter-label">Quote currency</span>
+          <input
+            type="text"
+            name="quote"
+            value={quoteInput}
+            onChange={(event) => setQuoteInput(event.target.value)}
+            placeholder="e.g. JPY"
+            className="search-input"
+          />
+        </label>
+        <label className="filter-field">
+          <span className="filter-label">Pair group</span>
+          <input
+            type="text"
+            name="group"
+            value={groupInput}
+            onChange={(event) => setGroupInput(event.target.value)}
+            placeholder="Major, Minor, Exotic"
+            className="search-input"
+          />
+        </label>
+        <label className="filter-field">
+          <span className="filter-label">Watch status</span>
+          <select
+            name="watched"
+            value={watchFilter}
+            onChange={(event) => setWatchFilter(event.target.value)}
+            className="search-input"
+          >
+            <option value="any">Any</option>
+            <option value="true">Watching</option>
+            <option value="false">Not watching</option>
+          </select>
+        </label>
         <div className="inline-actions">
           <button type="submit" className="primary-button">
             Apply filters
