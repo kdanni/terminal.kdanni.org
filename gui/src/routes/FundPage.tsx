@@ -469,6 +469,7 @@ export function FundPage({ apiBaseUrl }: FundPageProps): JSX.Element {
               value={tickerInput}
               onChange={(event) => setTickerInput(event.target.value)}
               placeholder="e.g. VTSAX"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -478,6 +479,7 @@ export function FundPage({ apiBaseUrl }: FundPageProps): JSX.Element {
               value={nameInput}
               onChange={(event) => setNameInput(event.target.value)}
               placeholder="Search by fund name"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -487,6 +489,7 @@ export function FundPage({ apiBaseUrl }: FundPageProps): JSX.Element {
               value={exchangeInput}
               onChange={(event) => setExchangeInput(event.target.value)}
               placeholder="Enter venue code"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -496,6 +499,7 @@ export function FundPage({ apiBaseUrl }: FundPageProps): JSX.Element {
               value={countryInput}
               onChange={(event) => setCountryInput(event.target.value)}
               placeholder="Country or region"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -505,6 +509,7 @@ export function FundPage({ apiBaseUrl }: FundPageProps): JSX.Element {
               value={currencyInput}
               onChange={(event) => setCurrencyInput(event.target.value)}
               placeholder="ISO currency (e.g. USD)"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -514,6 +519,7 @@ export function FundPage({ apiBaseUrl }: FundPageProps): JSX.Element {
               value={typeInput}
               onChange={(event) => setTypeInput(event.target.value)}
               placeholder="Fund style or class"
+              className="text-input"
             />
           </label>
           <div className="inline-actions">

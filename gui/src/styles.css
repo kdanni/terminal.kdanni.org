@@ -14,6 +14,8 @@
   --color-border: #d6e3f0;
   --color-accent: #2563eb;
   --color-accent-contrast: #e0f2fe;
+  --color-input-bg: #f8fafc;
+  --color-input-border: #d1d5db;
   --shadow-strong: 0 10px 30px rgba(15, 23, 42, 0.15);
   --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
   background-color: var(--color-bg);
@@ -35,6 +37,8 @@
   --color-border: #1f2937;
   --color-accent: #60a5fa;
   --color-accent-contrast: #0b1220;
+  --color-input-bg: #1f2937;
+  --color-input-border: #374151;
   --shadow-strong: 0 12px 32px rgba(0, 0, 0, 0.4);
   --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
@@ -472,8 +476,8 @@ body {
 .filter-panel {
   margin-bottom: 1rem;
   padding: 1rem;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
   display: flex;
@@ -801,9 +805,10 @@ body {
 .select-input {
   padding: 0.65rem 0.75rem;
   border-radius: 0.5rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-input-border);
   font-size: 1rem;
-  background: #f8fafc;
+  background: var(--color-input-bg);
+  color: var(--color-text);
 }
 
 .select-input {

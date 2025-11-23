@@ -476,6 +476,7 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
               value={tickerInput}
               onChange={(event) => setTickerInput(event.target.value)}
               placeholder="e.g. AAPL"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -486,6 +487,7 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
               value={nameInput}
               onChange={(event) => setNameInput(event.target.value)}
               placeholder="e.g. Apple"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -496,6 +498,7 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
               value={exchangeInput}
               onChange={(event) => setExchangeInput(event.target.value)}
               placeholder="e.g. NASDAQ"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -506,6 +509,7 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
               value={countryInput}
               onChange={(event) => setCountryInput(event.target.value)}
               placeholder="e.g. United States"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -516,6 +520,7 @@ export function StockPage({ apiBaseUrl }: StockPageProps): JSX.Element {
               value={currencyInput}
               onChange={(event) => setCurrencyInput(event.target.value)}
               placeholder="e.g. USD"
+              className="text-input"
             />
           </label>
           <div className="inline-actions">

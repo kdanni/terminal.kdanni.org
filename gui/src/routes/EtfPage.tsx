@@ -465,6 +465,7 @@ export function EtfPage({ apiBaseUrl }: EtfPageProps): JSX.Element {
               value={tickerInput}
               onChange={(event) => setTickerInput(event.target.value)}
               placeholder="e.g. VTI"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -475,6 +476,7 @@ export function EtfPage({ apiBaseUrl }: EtfPageProps): JSX.Element {
               value={nameInput}
               onChange={(event) => setNameInput(event.target.value)}
               placeholder="e.g. Total Market"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -485,6 +487,7 @@ export function EtfPage({ apiBaseUrl }: EtfPageProps): JSX.Element {
               value={exchangeInput}
               onChange={(event) => setExchangeInput(event.target.value)}
               placeholder="e.g. NASDAQ"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -495,6 +498,7 @@ export function EtfPage({ apiBaseUrl }: EtfPageProps): JSX.Element {
               value={countryInput}
               onChange={(event) => setCountryInput(event.target.value)}
               placeholder="e.g. United States"
+              className="text-input"
             />
           </label>
           <label className="filter-field">
@@ -505,6 +509,7 @@ export function EtfPage({ apiBaseUrl }: EtfPageProps): JSX.Element {
               value={currencyInput}
               onChange={(event) => setCurrencyInput(event.target.value)}
               placeholder="e.g. USD"
+              className="text-input"
             />
           </label>
           <div className="inline-actions">
