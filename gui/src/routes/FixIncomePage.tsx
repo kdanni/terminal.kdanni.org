@@ -274,6 +274,35 @@ export function FixIncomePage({ apiBaseUrl }: FixedIncomePageProps): JSX.Element
     setReloadIndex((current) => current + 1);
   };
 
+  const applyPresetFilters = (preset: FixedIncomeFilterPreset): void => {
+    setTickerInput(preset.filters.ticker ?? '');
+    setNameInput(preset.filters.name ?? '');
+    setExchangeInput(preset.filters.exchange ?? '');
+    setCountryInput(preset.filters.country ?? '');
+    setCurrencyInput(preset.filters.currency ?? '');
+    setTypeInput(preset.filters.type ?? '');
+    const next = new URLSearchParams(searchParams);
+
+    const setParam = (key: string, value: string | undefined): void => {
+      if (value) {
+        next.set(key, value);
+      } else {
+        next.delete(key);
+      }
+    };
+
+    setParam('ticker', sanitizeFilterValue(preset.filters.ticker ?? ''));
+    setParam('name', sanitizeSearchTerm(preset.filters.name ?? ''));
+    setParam('exchange', sanitizeFilterValue(preset.filters.exchange ?? ''));
+    setParam('country', sanitizeFilterValue(preset.filters.country ?? ''));
+    setParam('currency', sanitizeFilterValue(preset.filters.currency ?? ''));
+    setParam('type', sanitizeFilterValue(preset.filters.type ?? ''));
+    next.delete('page');
+    setPage(1);
+    setSearchParams(next);
+    setReloadIndex((current) => current + 1);
+  };
+
   const handleToggleWatch = async ({ symbol, exchange, watched, asset }: ToggleWatchRequest): Promise<void> => {
     if (!symbol) {
       return;
@@ -397,106 +426,46 @@ export function FixIncomePage({ apiBaseUrl }: FixedIncomePageProps): JSX.Element
 
   const breadcrumbs = useMemo(
     () => [
-      { label: 'Catalog', path: '/catalog' },
+      { label: 'Asset Catalog', path: '/catalog' },
       { label: 'Fixed Income' }
     ],
     []
   );
 
-  const stats = [
-    {
-      label: 'Latency',
-      value: latencyMs != null ? `${latencyMs} ms` : 'Pending',
-      description: 'Latest request duration'
-    },
-    {
-      label: 'Total results',
-      value: totalCount.toLocaleString(),
-      description: totalPages > 0 ? `${totalPages} pages at ${DEFAULT_PAGE_SIZE}/page` : 'Awaiting load'
-    },
-    {
-      label: 'Last updated',
-      value: lastUpdated ? lastUpdated.toLocaleString() : 'Not yet loaded',
-      description: 'Timestamp of last fetch'
-    }
-  ];
-
   return (
-    <section className="catalog" aria-label="Fixed income catalog">
-      <header className="catalog-header">
-        <Breadcrumbs items={breadcrumbs} />
-        <div className="catalog-title-group">
-          <div>
-            <p className="eyebrow">Data catalog</p>
-            <h1>Fixed Income assets</h1>
-            <p className="lede">
-              Explore bonds and other fixed income instruments. Use filters to focus on regions, currencies, or coupon types.
-            </p>
-          </div>
-          <div className="stat-grid" aria-label="Fixed income stats">
-            {stats.map((stat) => (
-              <div key={stat.label} className="stat-card">
-                <p className="stat-label">{stat.label}</p>
-                <p className="stat-value">{stat.value}</p>
-                <p className="stat-description">{stat.description}</p>
-              </div>
-            ))}
-          </div>
+    <section className="page-shell" aria-label="Fixed income catalog">
+      <Breadcrumbs items={breadcrumbs} />
+      <header className="page-header">
+        <p className="page-kicker">Catalog</p>
+        <h1>Fixed Income assets</h1>
+        <p className="app-description">
+          Explore bonds and other fixed income instruments. Use filters to focus on regions, currencies, or coupon types.
+        </p>
+        <div className="catalog-meta" aria-live="polite">
+          <span className="meta-chip">Page {page}</span>
+          {latencyMs != null ? <span className="meta-chip">API latency: {latencyMs} ms</span> : null}
+          {lastUpdated ? <span className="meta-chip">Updated {lastUpdated.toLocaleTimeString()}</span> : null}
         </div>
       </header>
 
-      <div className="filters-panel">
-        <div className="panel-header">
-          <div>
-            <p className="eyebrow">Filters</p>
-            <h2>Refine the fixed income list</h2>
-            <p className="app-subtle">Combine ticker, venue, and currency filters to narrow the view.</p>
-          </div>
-          <div className="quick-filters" aria-label="Quick filters">
-            {filterPresets.map((preset) => (
-              <button
-                type="button"
-                key={preset.label}
-                className="ghost-button"
-                onClick={() => {
-                  setTickerInput(preset.filters.ticker ?? '');
-                  setNameInput(preset.filters.name ?? '');
-                  setExchangeInput(preset.filters.exchange ?? '');
-                  setCountryInput(preset.filters.country ?? '');
-                  setCurrencyInput(preset.filters.currency ?? '');
-                  setTypeInput(preset.filters.type ?? '');
-                  const next = new URLSearchParams(searchParams);
-
-                  const setParam = (key: string, value: string | undefined): void => {
-                    if (value) {
-                      next.set(key, value);
-                    } else {
-                      next.delete(key);
-                    }
-                  };
-
-                  setParam('ticker', sanitizeFilterValue(preset.filters.ticker ?? ''));
-                  setParam('name', sanitizeSearchTerm(preset.filters.name ?? ''));
-                  setParam('exchange', sanitizeFilterValue(preset.filters.exchange ?? ''));
-                  setParam('country', sanitizeFilterValue(preset.filters.country ?? ''));
-                  setParam('currency', sanitizeFilterValue(preset.filters.currency ?? ''));
-                  setParam('type', sanitizeFilterValue(preset.filters.type ?? ''));
-                  next.delete('page');
-                  setPage(1);
-                  setSearchParams(next);
-                  setReloadIndex((current) => current + 1);
-                }}
-              >
-                <span className="quick-filter-label">{preset.label}</span>
-                <span className="quick-filter-description">{preset.description}</span>
-              </button>
-            ))}
-          </div>
+      <div className="filter-panel">
+        <div className="quick-filters" aria-label="Quick filters">
+          {filterPresets.map((preset) => (
+            <button
+              type="button"
+              key={preset.label}
+              className="quick-filter-pill"
+              onClick={() => applyPresetFilters(preset)}
+            >
+              <span className="pill-title">{preset.label}</span>
+              <span className="pill-subtitle">{preset.description}</span>
+            </button>
+          ))}
         </div>
 
         <form className="filter-grid" onSubmit={handleApplyFilters} aria-label="Filter fixed income table">
           <label className="filter-field">
-            <span>Ticker</span>
+            <span className="filter-label">Ticker</span>
             <input
               name="ticker"
               value={tickerInput}
@@ -505,7 +474,7 @@ export function FixIncomePage({ apiBaseUrl }: FixedIncomePageProps): JSX.Element
             />
           </label>
           <label className="filter-field">
-            <span>Name</span>
+            <span className="filter-label">Name</span>
             <input
               name="name"
               value={nameInput}
@@ -514,7 +483,7 @@ export function FixIncomePage({ apiBaseUrl }: FixedIncomePageProps): JSX.Element
             />
           </label>
           <label className="filter-field">
-            <span>Exchange</span>
+            <span className="filter-label">Exchange</span>
             <input
               name="exchange"
               value={exchangeInput}
@@ -523,7 +492,7 @@ export function FixIncomePage({ apiBaseUrl }: FixedIncomePageProps): JSX.Element
             />
           </label>
           <label className="filter-field">
-            <span>Country</span>
+            <span className="filter-label">Country</span>
             <input
               name="country"
               value={countryInput}
@@ -532,7 +501,7 @@ export function FixIncomePage({ apiBaseUrl }: FixedIncomePageProps): JSX.Element
             />
           </label>
           <label className="filter-field">
-            <span>Currency</span>
+            <span className="filter-label">Currency</span>
             <input
               name="currency"
               value={currencyInput}
@@ -541,7 +510,7 @@ export function FixIncomePage({ apiBaseUrl }: FixedIncomePageProps): JSX.Element
             />
           </label>
           <label className="filter-field">
-            <span>Type</span>
+            <span className="filter-label">Type</span>
             <input
               name="type"
               value={typeInput}
