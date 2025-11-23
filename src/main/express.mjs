@@ -15,6 +15,7 @@ import ohlcvApi from '../api/ohlcv/route.mjs';
 import watchListApi from '../api/watch-list/route.mjs';
 import forexApi from '../api/forex/route.mjs';
 import wellKnown from '../api/well-known/route.mjs';
+import fundCatalog from '../api/fund/route.mjs';
 
 const app = express();
 const port = process.env.API_PORT || process.env.PORT || 3000;
@@ -72,6 +73,7 @@ app.use('/api/etf', etfCatalog);
 app.use('/api/crypto', cryptoCatalog);
 app.use('/api/exchanges', exchangeCatalog);
 app.use('/api/fixincome', fixedIncomeCatalog);
+app.use('/api/fund', fundCatalog);
 app.use('/api/commodity', commodityCatalog);
 app.use('/api/me', meApi);
 app.use('/api/ohlcv', ohlcvApi);

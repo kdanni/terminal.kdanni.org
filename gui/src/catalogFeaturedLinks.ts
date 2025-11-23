@@ -17,6 +17,11 @@ export const CATALOG_FEATURED_LINKS: FeaturedLink[] = [
     to: '/fixincome'
   },
   {
+    title: 'Fund catalog',
+    description: 'Browse pooled vehicles with filtering, pagination, and watch toggles.',
+    to: '/fund'
+  },
+  {
     title: 'Commodities',
     description: 'Browse metals, energy, and agricultural contracts with quick filters.',
     to: '/commodity'
