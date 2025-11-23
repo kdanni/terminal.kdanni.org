@@ -48,6 +48,7 @@ export function withAuthenticationRequired<TProps>(
       return options?.onRedirecting ? <>{options.onRedirecting()}</> : null;
     }
 
+    // @ts-expect-error -- TypeScript struggles with HOCs sometimes
     return <Component {...props} />;
   };
 }

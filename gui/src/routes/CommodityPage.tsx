@@ -313,173 +313,144 @@ export function CommodityPage({ apiBaseUrl }: CommodityPageProps): JSX.Element {
 
   const breadcrumbs = useMemo(
     () => [
-      { label: 'Catalog', href: '/catalog' },
-      { label: 'Commodity catalog' }
+      { label: 'Asset Catalog', path: '/catalog' },
+      { label: 'Commodities' }
     ],
     []
   );
 
+  const hasFilters = Boolean(tickerFilter || nameFilter || categoryFilter || watchStatusFilter !== 'any');
+  const activeFiltersLabel = [
+    tickerFilter ? `Ticker: ${tickerFilter}` : null,
+    nameFilter ? `Name: ${nameFilter}` : null,
+    categoryFilter ? `Category: ${categoryFilter}` : null,
+    watchStatusFilter !== 'any' ? `Watch: ${watchStatusFilter}` : null
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
-    <div className="page-shell">
+    <section className="page-shell">
       <Breadcrumbs items={breadcrumbs} />
       <header className="page-header">
-        <div>
-          <p className="eyebrow">Commodity catalog</p>
-          <h1>Commodity data table</h1>
-          <p className="app-subtle">Browse commodity exposures with filters, pagination, and watch list support.</p>
-        </div>
-        <div className="page-meta">
-          <dl>
-            <div>
-              <dt>Latency</dt>
-              <dd>{latencyMs != null ? `${latencyMs} ms` : '—'}</dd>
-            </div>
-            <div>
-              <dt>Last updated</dt>
-              <dd>{lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}</dd>
-            </div>
-            <div>
-              <dt>Records</dt>
-              <dd>{totalCount.toLocaleString()}</dd>
-            </div>
-          </dl>
-          <button type="button" className="secondary-button" onClick={() => setReloadIndex((current) => current + 1)}>
-            Reload
-          </button>
+        <p className="page-kicker">Catalog</p>
+        <h1>Commodity data table</h1>
+        <p className="app-description">
+          Browse commodity exposures with filters, pagination, and watch list support.
+        </p>
+        <div className="catalog-meta" aria-live="polite">
+          <span className="meta-chip">Page {page}</span>
+          {latencyMs != null ? <span className="meta-chip">API latency: {latencyMs} ms</span> : null}
+          {lastUpdated ? <span className="meta-chip">Updated {lastUpdated.toLocaleTimeString()}</span> : null}
+          <span className="meta-chip">Total: {totalCount}</span>
         </div>
       </header>
 
-      <section className="panel">
-        <form className="filter-grid" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="ticker-input">Ticker</label>
+      <form className="filter-panel" onSubmit={handleSubmit} aria-label="Commodity filters">
+        <div className="filter-grid">
+          <label className="filter-field">
+            <span className="filter-label">Ticker</span>
             <input
-              id="ticker-input"
               type="text"
               value={tickerInput}
               onChange={(event) => setTickerInput(event.target.value)}
               placeholder="GC, SI, CL…"
+              className="search-input"
             />
-          </div>
-          <div>
-            <label htmlFor="name-input">Name</label>
+          </label>
+          <label className="filter-field">
+            <span className="filter-label">Name</span>
             <input
-              id="name-input"
               type="search"
               value={nameInput}
               onChange={(event) => setNameInput(event.target.value)}
               placeholder="Gold, WTI, Copper…"
+              className="search-input"
             />
-          </div>
-          <div>
-            <label htmlFor="category-input">Category</label>
+          </label>
+          <label className="filter-field">
+            <span className="filter-label">Category</span>
             <input
-              id="category-input"
               type="text"
               value={categoryInput}
               onChange={(event) => setCategoryInput(event.target.value)}
               placeholder="Metals, Energy, Agriculture…"
+              className="search-input"
             />
-          </div>
-          <div>
-            <label htmlFor="watch-filter">Watch status</label>
+          </label>
+          <label className="filter-field">
+            <span className="filter-label">Watch status</span>
             <select
-              id="watch-filter"
               value={watchFilter}
               onChange={(event) => setWatchFilter(event.target.value)}
+              className="search-input"
             >
               <option value="any">Any</option>
               <option value="true">Watching</option>
               <option value="false">Not watching</option>
             </select>
-          </div>
-          <div className="filter-actions">
-            <button type="submit" className="primary-button">
-              Apply filters
-            </button>
-            <button type="button" className="ghost-button" onClick={handleResetFilters}>
-              Reset
-            </button>
-          </div>
-        </form>
-      </section>
+          </label>
+        </div>
+        <div className="inline-actions">
+          <button type="submit" className="primary-button">
+            Apply filters
+          </button>
+          <button type="button" className="secondary-button" onClick={handleResetFilters}>
+            Reset
+          </button>
+        </div>
+        {hasFilters ? <p className="app-subtle">Active filters: {activeFiltersLabel}</p> : null}
+      </form>
 
-      <section className="panel">
-        <header className="panel-header">
-          <div>
-            <p className="eyebrow">Results</p>
-            <h2>Commodity listings</h2>
-            <p className="app-subtle">Showing page {page} of {Math.max(totalPages, 1)}.</p>
-          </div>
-          <div className="pagination-controls">
-            <button
-              type="button"
-              className="ghost-button"
-              disabled={page <= 1}
-              onClick={() => handlePageChange(page - 1)}
-            >
-              Previous
-            </button>
-            <span className="pagination-label">Page {page}</span>
-            <button
-              type="button"
-              className="ghost-button"
-              disabled={page >= totalPages}
-              onClick={() => handlePageChange(page + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </header>
-
-        {error ? (
-          <div role="alert" className="error-message">
-            <p>{error.message}</p>
+      {error ? (
+        <div role="alert" className="error-message">
+          {error.message || 'Unable to load commodity catalog.'}
+          <div className="inline-actions">
             <button type="button" className="secondary-button" onClick={() => setReloadIndex((current) => current + 1)}>
-              Retry
+              Retry request
             </button>
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
-        {actionError ? (
-          <div role="alert" className="error-message app-subtle">
-            {actionError.message || 'Failed to update watch status.'}
-          </div>
-        ) : null}
+      {actionError ? (
+        <div role="alert" className="error-message">
+          {actionError.message || 'Failed to update watch status.'}
+        </div>
+      ) : null}
 
-        <GlobalLoadingShell visible={loading} message="Loading commodity catalog…" />
+      <GlobalLoadingShell visible={loading && assets.length === 0} message="Loading commodity catalog…" />
 
-        <AssetTable
-          assets={assets}
-          loading={loading}
-          pendingWatchUpdates={pendingWatchUpdates}
-          onToggleWatch={handleToggleWatch}
-          onRetry={() => setReloadIndex((current) => current + 1)}
-          totalCount={totalCount}
-        />
+      <AssetTable
+        assets={assets}
+        loading={loading}
+        pendingWatchUpdates={pendingWatchUpdates}
+        onToggleWatch={handleToggleWatch}
+        onRetry={() => setReloadIndex((current) => current + 1)}
+        totalCount={totalCount}
+      />
 
-        <footer className="panel-footer pagination-controls">
-          <button
-            type="button"
-            className="ghost-button"
-            disabled={page <= 1}
-            onClick={() => handlePageChange(page - 1)}
-          >
-            Previous
-          </button>
-          <span className="pagination-label">
-            Page {page} of {Math.max(totalPages, 1)}
-          </span>
-          <button
-            type="button"
-            className="ghost-button"
-            disabled={page >= totalPages}
-            onClick={() => handlePageChange(page + 1)}
-          >
-            Next
-          </button>
-        </footer>
-      </section>
-    </div>
+      <footer className="pagination" aria-label="Pagination">
+        <button
+          type="button"
+          className="pagination-button"
+          disabled={loading || page <= 1}
+          onClick={() => handlePageChange(page - 1)}
+        >
+          Previous
+        </button>
+        <span className="pagination-status">
+          Page {page} of {Math.max(totalPages, 1)}
+        </span>
+        <button
+          type="button"
+          className="pagination-button"
+          disabled={loading || (page >= totalPages && totalPages > 0)}
+          onClick={() => handlePageChange(page + 1)}
+        >
+          Next
+        </button>
+      </footer>
+    </section>
   );
 }
