@@ -16,6 +16,9 @@ export default defineConfig(({ mode }) => {
           }
         : {}
     },
+    build: {
+      sourcemap: true
+    },
     server: {
       port: Number.parseInt(env.VITE_DEV_SERVER_PORT || '5173', 10),
       proxy: {

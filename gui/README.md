@@ -73,6 +73,33 @@ resources require SRI and all cookies stay scoped to HTTPS origins.
   with a timestamp and user agent string.
 - Operational runbooks live in `docs/incident-playbook.md`.
 
+## Runbooks
+
+### Environment configuration
+
+Define the following variables in `.env.production` (or your hosting provider’s environment editor) before building:
+
+- `VITE_API_BASE_URL` – production API origin for proxying `/api` requests.
+- `VITE_AUTH0_DOMAIN` / `VITE_AUTH0_CLIENT_ID` – Auth0 tenant details for the SPA.
+- `VITE_SENTRY_DSN`, `VITE_RELEASE` – observability identifiers for Sentry/Logtail.
+- `VITE_UPTIME_HEARTBEAT_URL` – optional heartbeat endpoint for client-side pings.
+- `VITE_PREVIEW_PORT` – overrides `npm run preview`’s port when simulating production locally.
+
+### Deploying the GUI
+
+1. Build the production assets with source maps enabled: `npm run build` (outputs to `dist/`).
+2. Verify `dist/assets` contains hashed bundles **and** matching `.map` files before shipping.
+3. Ensure `public/_headers` ships with the deployment so cache and security headers apply; immutable assets should return
+   `Cache-Control: public, max-age=31536000, immutable` and `/` should be `Cache-Control: no-cache`.
+4. Upload `dist/` to the static host (for Netlify-style hosts, include `_headers` in the upload root).
+5. Smoke-test with `npm run preview` (or your CDN preview URL) to confirm API connectivity and Auth0 login flows.
+
+### Support contacts
+
+- **Primary on-call**: kdanni (Slack: `@kdanni`, email: `ops@kdanni.org`).
+- **Escalation**: SRE rotation via `#ops-oncall` Slack channel.
+- **Incident docs**: `docs/incident-playbook.md` for triage and rollback steps.
+
 ## Merge status
 
 - No conflict markers or unresolved merges are present in the GUI codebase as of this review.
