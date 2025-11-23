@@ -80,6 +80,12 @@ export function PortalLayout({ authError }: PortalLayoutProps): JSX.Element {
             Commodities
           </NavLink>
           <NavLink
+            to="/ohlcv"
+            className={({ isActive }) => `portal-nav-link${isActive ? ' is-active' : ''}`}
+          >
+            OHLCV
+          </NavLink>
+          <NavLink
             to="/watchlist"
             className={({ isActive }) => `portal-nav-link${isActive ? ' is-active' : ''}`}
           >

@@ -14,6 +14,7 @@ import { ForexPage } from './routes/ForexPage';
 import { FixIncomePage } from './routes/FixIncomePage';
 import { CommodityPage } from './routes/CommodityPage';
 import { FundPage } from './routes/FundPage';
+import { OhlcvPage } from './routes/OhlcvPage';
 
 type AppProps = {
   apiBaseUrl: string;
@@ -89,6 +90,7 @@ const ProtectedForexPage = withPortalAuthentication(ForexPage);
 const ProtectedFixIncomePage = withPortalAuthentication(FixIncomePage);
 const ProtectedCommodityPage = withPortalAuthentication(CommodityPage);
 const ProtectedFundPage = withPortalAuthentication(FundPage);
+const ProtectedOhlcvPage = withPortalAuthentication(OhlcvPage);
 
 function App({ apiBaseUrl }: AppProps): JSX.Element {
   const { error: authError } = useAuth0();
@@ -108,6 +110,7 @@ function App({ apiBaseUrl }: AppProps): JSX.Element {
             <Route path="forex" element={<ProtectedForexPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="fixincome" element={<ProtectedFixIncomePage apiBaseUrl={apiBaseUrl} />} />
             <Route path="fund" element={<ProtectedFundPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="ohlcv" element={<ProtectedOhlcvPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="watchlist" element={<ProtectedWatchListPage apiBaseUrl={apiBaseUrl} />} />
             <Route path="*" element={<Navigate to="/catalog" replace />} />
           </Route>

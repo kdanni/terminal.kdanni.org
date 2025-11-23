@@ -39,6 +39,16 @@ function parseRange(value) {
         return null;
     }
 
+    if (trimmed.toLowerCase() === 'ytd') {
+        const now = new Date();
+        const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+
+        return {
+            start,
+            label: 'YTD',
+        };
+    }
+
     const match = trimmed.match(/^(\d+)\s*(h|hr|hour|hours|d|day|days|w|week|weeks|m|mo|mon|month|months|y|yr|year|years)$/i);
     if (!match) {
         return null;
