@@ -3,7 +3,7 @@ import { getCryptocurrenciesList } from '../twelve-data/asset-catalogs/cryptocur
 import { getEtfList } from '../twelve-data/asset-catalogs/etf-list.mjs';
 import { getFixedIncomeList } from '../twelve-data/asset-catalogs/fixedincome-list.mjs';
 import { getForexPairsList } from '../twelve-data/asset-catalogs/forex-pairs-list.mjs';
-import { getFundList } from '../twelve-data/asset-catalogs/found-list.mjs';
+import { getFundList } from '../twelve-data/asset-catalogs/fund-list.mjs';
 import { getStockList } from '../twelve-data/asset-catalogs/stock-list.mjs';
 import { getTwelveDataApiKey } from '../twelve-data/api-key.mjs';
 

@@ -150,7 +150,7 @@ async function tdFixedIncomeList() {
 }
 
 async function tdFundList() {
-    const { getFundList } = await import('./twelve-data/asset-catalogs/found-list.mjs');
+    const { getFundList } = await import('./twelve-data/asset-catalogs/fund-list.mjs');
     await getFundList();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);

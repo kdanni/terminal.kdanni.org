@@ -27,7 +27,8 @@ export async function getFundList() {
     //     }
     // }
     
-    try {
+    try {        
+        console.log('' + response.body.length);
         jsonData = JSON.parse(response.body);
     } catch (error) {
         console.error('Error parsing JSON data:', error);
