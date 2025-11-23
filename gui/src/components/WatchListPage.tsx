@@ -56,6 +56,15 @@ export function WatchListPage({ apiBaseUrl }: WatchListPageProps): JSX.Element {
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
+  const applyToEntries = useCallback(
+    (targetKeys: string[], updater: (entry: WatchListEntry) => WatchListEntry): void => {
+      setWatchList((current) =>
+        current.map((entry) => (targetKeys.includes(buildWatchKey(entry)) ? updater(entry) : entry))
+      );
+    },
+    []
+  );
+
   const breadcrumbs: BreadcrumbItem[] = [
     { label: 'Asset Catalog', path: '/catalog' },
     { label: 'My Watch List' }
@@ -143,61 +152,89 @@ export function WatchListPage({ apiBaseUrl }: WatchListPageProps): JSX.Element {
     });
   };
 
+  const toggleEntries = useCallback(
+    async (targets: WatchListEntry[], nextWatched: boolean): Promise<void> => {
+      if (!targets.length) {
+        return;
+      }
+
+      const targetKeys = targets.map((entry) => buildWatchKey(entry));
+      const rollbackSnapshot = watchList.map((entry) => ({ ...entry }));
+
+      setActionError(null);
+      setRowPending(targetKeys, true);
+      applyToEntries(targetKeys, (entry) => ({
+        ...entry,
+        watched: nextWatched,
+        updatedAt: new Date().toISOString()
+      }));
+
+      try {
+        await Promise.all(
+          targets.map(async (entry) => {
+            const response = await fetchWithAuth(`${apiBaseUrl}/api/watch-list/toggle`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                symbol: entry.symbol,
+                exchange: normalizeExchangeValue(entry.exchange) || null,
+                watched: nextWatched
+              })
+            });
+
+            if (!response.ok) {
+              throw new ApiError(`Failed to update ${entry.symbol}`, response.status);
+            }
+
+            const payload = (await response.json()) as { data?: Partial<WatchListEntry> & { watchListId?: number | string } };
+
+            applyToEntries([buildWatchKey(entry)], (candidate) => ({
+              ...candidate,
+              watched: payload?.data?.watched ?? nextWatched,
+              watchListId: payload?.data?.watchListId ?? candidate.watchListId,
+              updatedAt: payload?.data?.updatedAt ?? candidate.updatedAt
+            }));
+          })
+        );
+      } catch (error) {
+        setWatchList(rollbackSnapshot);
+        const normalized = error instanceof Error ? error : new Error('Failed to update watch list');
+        setActionError(normalized);
+        logError(error, { source: 'watch-list-toggle', count: targets.length });
+      } finally {
+        setRowPending(targetKeys, false);
+      }
+    },
+    [apiBaseUrl, applyToEntries, fetchWithAuth, watchList]
+  );
+
   const handleBulkUnwatch = async (): Promise<void> => {
     const targets = watchList.filter((entry) => selectedRows.has(buildWatchKey(entry)));
     if (!targets.length) {
       return;
     }
 
-    const targetKeys = targets.map((entry) => buildWatchKey(entry));
-    const rollbackSnapshot = watchList;
-
-    setActionError(null);
     setBulkUpdating(true);
-    setRowPending(targetKeys, true);
-    setWatchList((current) =>
-      current.filter((entry) => !targetKeys.includes(buildWatchKey(entry)))
-    );
-
     try {
-      await Promise.all(
-        targets.map(async (entry) => {
-          const response = await fetchWithAuth(`${apiBaseUrl}/api/watch-list/toggle`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              symbol: entry.symbol,
-              exchange: normalizeExchangeValue(entry.exchange) || null,
-              watched: false
-            })
-          });
-
-          if (!response.ok) {
-            throw new ApiError(`Failed to update ${entry.symbol}`, response.status);
-          }
-        })
-      );
-
-      await handleSync();
-    } catch (error) {
-      setWatchList(rollbackSnapshot);
-      const normalized = error instanceof Error ? error : new Error('Failed to update watch list');
-      setActionError(normalized);
-      logError(error, { source: 'watch-list-bulk-unwatch', count: targets.length });
+      await toggleEntries(targets, false);
     } finally {
       setBulkUpdating(false);
       setSelectedRows(new Set());
-      setRowPending(targetKeys, false);
     }
+  };
+
+  const handleRowToggle = async (entry: WatchListEntry, watched: boolean): Promise<void> => {
+    await toggleEntries([entry], watched);
   };
 
   const formattedCount = useMemo(() => {
     const total = totalCount ?? watchList.length;
+    const activeCount = watchList.filter((entry) => entry.watched).length;
     const suffix = total !== watchList.length ? ` / ${total}` : '';
-    return `${watchList.length}${suffix}`;
-  }, [totalCount, watchList.length]);
+    return `${activeCount} watching / ${watchList.length}${suffix}`;
+  }, [totalCount, watchList]);
 
   const renderTable = (): JSX.Element => {
     if (!watchList.length && !loading) {
@@ -250,9 +287,23 @@ export function WatchListPage({ apiBaseUrl }: WatchListPageProps): JSX.Element {
                   <td>{entry.exchange || '—'}</td>
                   <td>{entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : '—'}</td>
                   <td>
-                    <span className={`watch-status-chip ${isPending ? 'chip-pending' : 'chip-active'}`}>
-                      {isPending ? 'Syncing…' : 'Watching'}
-                    </span>
+                    <div className="watch-toggle-cell">
+                      <label className="toggle-label">
+                        <input
+                          type="checkbox"
+                          checked={entry.watched}
+                          disabled={bulkUpdating || isPending}
+                          onChange={(event) => handleRowToggle(entry, event.target.checked)}
+                        />
+                        <span
+                          className={`watch-status-chip ${
+                            isPending ? 'chip-pending' : entry.watched ? 'chip-active' : 'chip-inactive'
+                          }`}
+                        >
+                          {isPending ? 'Syncing…' : entry.watched ? 'Watching' : 'Not watching'}
+                        </span>
+                      </label>
+                    </div>
                   </td>
                 </tr>
               );

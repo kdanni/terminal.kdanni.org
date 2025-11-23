@@ -7,8 +7,13 @@ export type Asset = {
   country?: string | null;
   type?: string | null;
   category?: string | null;
+  description?: string | null;
+  currencyBase?: string | null;
+  currencyQuote?: string | null;
+  availableExchanges?: string[] | null;
   watched?: boolean;
   watchListId?: string | number | null;
+  watchUpdatedAt?: string | null;
 };
 
 export type ToggleWatchRequest = {
@@ -16,6 +21,11 @@ export type ToggleWatchRequest = {
   exchange?: string | null;
   watched: boolean;
   asset?: Asset;
+};
+
+export type AssetClassSummary = {
+  assetType: string;
+  total?: number;
 };
 
 export type WatchListEntry = {

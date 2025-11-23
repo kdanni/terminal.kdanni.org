@@ -1,20 +1,18 @@
-import { Component, Suspense, lazy, useEffect, type ComponentType, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ComponentType, type ErrorInfo, type ReactNode } from 'react';
 import { useAuth0, withAuthenticationRequired } from '@auth0/auth0-react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { CATALOG_FEATURED_LINKS } from './catalogFeaturedLinks';
 import { GlobalLoadingShell } from './components/GlobalLoadingShell';
 import { LoginRedirectPage } from './components/LoginRedirectPage';
 import { PortalLayout } from './components/PortalLayout';
+import { WelcomePage } from './components/WelcomePage';
+import { WatchListPage } from './components/WatchListPage';
 import { logError } from './errorReporting';
-
-const loadCatalogRoutes = () => import('./routes/CatalogRoutes');
-const CatalogPage = lazy(() => loadCatalogRoutes().then((module) => ({ default: module.CatalogPage })));
-const AssetClassesIndex = lazy(() => loadCatalogRoutes().then((module) => ({ default: module.AssetClassesIndex })));
-const AssetClassCatalogPage = lazy(() => loadCatalogRoutes().then((module) => ({ default: module.AssetClassCatalogPage })));
-const RegionalIndexPage = lazy(() => loadCatalogRoutes().then((module) => ({ default: module.RegionalIndexPage })));
-const UsRegionalCatalogPage = lazy(() => loadCatalogRoutes().then((module) => ({ default: module.UsRegionalCatalogPage })));
-const OhlcvVisualizationPage = lazy(() => loadCatalogRoutes().then((module) => ({ default: module.OhlcvVisualizationPage })));
-const WatchListPage = lazy(() => import('./components/WatchListPage').then((module) => ({ default: module.WatchListPage })));
+import { StockPage } from './routes/StockPage';
+import { EtfPage } from './routes/EtfPage';
+import { CryptoPage } from './routes/CryptoPage';
+import { ForexPage } from './routes/ForexPage';
+import { FixIncomePage } from './routes/FixIncomePage';
+import { CommodityPage } from './routes/CommodityPage';
 
 type AppProps = {
   apiBaseUrl: string;
@@ -76,51 +74,36 @@ function withPortalAuthentication<P extends object>(component: ComponentType<P>)
   });
 }
 
-const ProtectedCatalogPage = withPortalAuthentication(CatalogPage);
-const ProtectedAssetClassesIndex = withPortalAuthentication(AssetClassesIndex);
-const ProtectedAssetClassCatalogPage = withPortalAuthentication(AssetClassCatalogPage);
-const ProtectedRegionalIndexPage = withPortalAuthentication(RegionalIndexPage);
-const ProtectedUsRegionalCatalogPage = withPortalAuthentication(UsRegionalCatalogPage);
-const ProtectedOhlcvVisualizationPage = withPortalAuthentication(OhlcvVisualizationPage);
+const ProtectedWelcomePage = withPortalAuthentication(WelcomePage);
 const ProtectedWatchListPage = withPortalAuthentication(WatchListPage);
+const ProtectedStockPage = withPortalAuthentication(StockPage);
+const ProtectedEtfPage = withPortalAuthentication(EtfPage);
+const ProtectedCryptoPage = withPortalAuthentication(CryptoPage);
+const ProtectedForexPage = withPortalAuthentication(ForexPage);
+const ProtectedFixIncomePage = withPortalAuthentication(FixIncomePage);
+const ProtectedCommodityPage = withPortalAuthentication(CommodityPage);
 
 function App({ apiBaseUrl }: AppProps): JSX.Element {
   const { error: authError } = useAuth0();
 
-  useEffect(() => {
-    void loadCatalogRoutes();
-    void import('./components/WatchListPage');
-  }, []);
-
   return (
     <BrowserRouter>
       <AppErrorBoundary>
-        <Suspense fallback={<GlobalLoadingShell visible message="Loading view…" />}>
-          <Routes>
-            <Route path="/login" element={<LoginRedirectPage />} />
-            <Route element={<PortalLayout authError={authError} />}>
-              <Route index element={<Navigate to="/catalog" replace />} />
-              <Route
-                path="catalog"
-                element={
-                  <ProtectedCatalogPage
-                    apiBaseUrl={apiBaseUrl}
-                    title="Asset Catalog"
-                    breadcrumbs={[{ label: 'Asset Catalog' }]}
-                    featuredLinks={CATALOG_FEATURED_LINKS}
-                  />
-                }
-              />
-              <Route path="catalog/classes" element={<ProtectedAssetClassesIndex />} />
-              <Route path="catalog/classes/:className" element={<ProtectedAssetClassCatalogPage apiBaseUrl={apiBaseUrl} />} />
-              <Route path="catalog/regions" element={<ProtectedRegionalIndexPage />} />
-              <Route path="catalog/regions/us" element={<ProtectedUsRegionalCatalogPage apiBaseUrl={apiBaseUrl} />} />
-              <Route path="ohlcv" element={<ProtectedOhlcvVisualizationPage apiBaseUrl={apiBaseUrl} />} />
-              <Route path="watch-list" element={<ProtectedWatchListPage apiBaseUrl={apiBaseUrl} />} />
-              <Route path="*" element={<Navigate to="/catalog" replace />} />
-            </Route>
-          </Routes>
-        </Suspense>
+        <Routes>
+          <Route path="/login" element={<LoginRedirectPage />} />
+          <Route element={<PortalLayout authError={authError} />}>
+            <Route index element={<Navigate to="/catalog" replace />} />
+            <Route path="catalog" element={<ProtectedWelcomePage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="stock" element={<ProtectedStockPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="etf" element={<ProtectedEtfPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="crypto" element={<ProtectedCryptoPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="commodity" element={<ProtectedCommodityPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="forex" element={<ProtectedForexPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="fixincome" element={<ProtectedFixIncomePage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="watchlist" element={<ProtectedWatchListPage apiBaseUrl={apiBaseUrl} />} />
+            <Route path="*" element={<Navigate to="/catalog" replace />} />
+          </Route>
+        </Routes>
       </AppErrorBoundary>
     </BrowserRouter>
   );

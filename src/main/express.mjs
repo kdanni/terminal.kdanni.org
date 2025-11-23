@@ -4,10 +4,16 @@ import express from 'express';
 import { errorHandler } from './../api/error-mw.mjs';
 import { requireAuth } from '../api/auth0.mjs';
 import assetCatalog from '../api/assets/route.mjs';
+import stockCatalog from '../api/stocks/route.mjs';
+import etfCatalog from '../api/etf/route.mjs';
+import cryptoCatalog from '../api/crypto/route.mjs';
 import exchangeCatalog from '../api/exchanges/route.mjs';
+import fixedIncomeCatalog from '../api/fixincome/route.mjs';
+import commodityCatalog from '../api/commodity/route.mjs';
 import meApi from '../api/me/route.mjs';
 import ohlcvApi from '../api/ohlcv/route.mjs';
 import watchListApi from '../api/watch-list/route.mjs';
+import forexApi from '../api/forex/route.mjs';
 import wellKnown from '../api/well-known/route.mjs';
 
 const app = express();
@@ -61,10 +67,16 @@ app.listen(port, () => {
 app.use('/.well-known', wellKnown);
 
 app.use('/api/assets', assetCatalog);
+app.use('/api/stocks', stockCatalog);
+app.use('/api/etf', etfCatalog);
+app.use('/api/crypto', cryptoCatalog);
 app.use('/api/exchanges', exchangeCatalog);
+app.use('/api/fixincome', fixedIncomeCatalog);
+app.use('/api/commodity', commodityCatalog);
 app.use('/api/me', meApi);
 app.use('/api/ohlcv', ohlcvApi);
 app.use('/api/watch-list', watchListApi);
+app.use('/api/forex', forexApi);
 
 app.use(errorHandler);
 
