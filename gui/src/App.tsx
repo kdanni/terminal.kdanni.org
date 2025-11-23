@@ -68,6 +68,11 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, AppErrorBounda
 }
 
 function withPortalAuthentication<P extends object>(component: ComponentType<P>): ComponentType<P> {
+  // Use optional chaining for environment check because during tests/build import.meta.env might behave differently
+  if (import.meta.env?.DEV && import.meta.env?.VITE_USE_MSW === 'true') {
+    return component;
+  }
+
   return withAuthenticationRequired(component, {
     onRedirecting: () => <GlobalLoadingShell visible message="Redirecting to login…" />,
     returnTo: window.location.pathname
