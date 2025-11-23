@@ -222,6 +222,28 @@ const ASSET_CLASS_CONFIG: Record<
       { label: 'Quote mix', value: 'USD, USDT, BTC' },
       { label: 'Use cases', value: 'Exchange discovery, pair coverage' }
     ]
+  },
+  fund: {
+    displayName: 'Funds',
+    description: 'Mutual funds and pooled vehicles with screening presets.',
+    presetFilters: { assetClass: 'fund' },
+    quickFilters: [
+      {
+        label: 'US-domiciled funds',
+        description: 'USD currency and US venues.',
+        filters: { assetClass: 'fund', country: 'US', currency: 'USD' }
+      },
+      {
+        label: 'Income category',
+        description: 'Filters to income or dividend-tilted funds.',
+        filters: { assetClass: 'fund', type: 'income' }
+      }
+    ],
+    highlights: [
+      { label: 'Common venues', value: 'US mutual fund listings' },
+      { label: 'Currencies', value: 'USD primary, global mixes' },
+      { label: 'Use cases', value: 'Fund screening, category pivots' }
+    ]
   }
 };
 

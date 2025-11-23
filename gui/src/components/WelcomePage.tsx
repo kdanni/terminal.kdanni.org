@@ -104,6 +104,8 @@ export function WelcomePage({ apiBaseUrl }: WelcomePageProps): JSX.Element {
                 ? '/stock'
                 : assetType === 'etf'
                   ? '/etf'
+                  : assetType === 'fund'
+                    ? '/fund'
                   : assetType === 'fixed_income'
                     ? '/fixincome'
                     : assetType === 'commodity'
