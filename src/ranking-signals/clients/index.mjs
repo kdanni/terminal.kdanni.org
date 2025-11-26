@@ -9,6 +9,7 @@ export { fetchCoinGeckoExchangeSignals, mapCoinGeckoExchangeSignals } from './co
 export { pingCoinMarketCap } from './coinmarketcap/health-check.mjs';
 export { getCoinMarketCapApiKey, buildCoinMarketCapHeaders } from './coinmarketcap/api-key.mjs';
 export { fetchCoinMarketCapExchangeSignals, mapCoinMarketCapExchangeSignals } from './coinmarketcap/exchange-signals.mjs';
+export { fetchCoinMarketCapAssetSignals, mapCoinMarketCapAssetSignals } from './coinmarketcap/asset-signals.mjs';
 
 export { pingKaiko } from './kaiko/health-check.mjs';
 export { getKaikoApiKey, buildKaikoHeaders } from './kaiko/api-key.mjs';
