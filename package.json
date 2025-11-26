@@ -18,6 +18,7 @@
     "ohlc:collect:daily": "node index.js ohlc:collect:daily",
     "ohlc:collect:hourly": "node index.js ohlc:collect:hourly",
     "rank:exchange": "node index.js ranking:collect:exchanges",
+    "crypto:bluechip:collect": "node index.js crypto:blue-chip:collect",
     "dev": "nodemon index.js",
     "test": "node --test --test-reporter=spec test/**/*.test.js"
   },
