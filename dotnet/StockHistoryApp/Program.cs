@@ -7,6 +7,9 @@ namespace StockHistoryApp;
 
 public class Program
 {
+    internal const int DefaultBackfillDays = 60;
+    private const int MaxBackfillDays = 3650;
+
     public static void Main(string[] args)
     {
         var settings = LoadConfiguration("appsettings.json");
@@ -14,7 +17,7 @@ public class Program
             ? "stockhistory.db"
             : settings.DatabasePath;
 
-        var days = settings.Days > 0 ? settings.Days : 14;
+        var (days, daysSource) = ResolveBackfillWindow(args, settings.Days);
         var tickers = (settings.Tickers ?? new List<string>())
             .Where(t => !string.IsNullOrWhiteSpace(t))
             .Select(t => t.Trim().ToUpperInvariant())
@@ -27,6 +30,7 @@ public class Program
             return;
         }
 
+        Console.WriteLine($"Backfill window: {days} days ({daysSource}).");
         Console.WriteLine($"Running STOCKHISTORY for {tickers.Count} tickers over the last {days} days...");
 
         var service = new StockHistoryService();
@@ -58,6 +62,52 @@ public class Program
                 Console.WriteLine($"Failed to process ticker {ticker}: {ex.Message}");
             }
         }
+    }
+
+    private static (int Days, string Source) ResolveBackfillWindow(string[] args, int configuredDays)
+    {
+        var days = configuredDays > 0 ? configuredDays : DefaultBackfillDays;
+        var source = configuredDays > 0 ? "configured via appsettings.json" : "default";
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+
+            if (arg is "-h" or "--help")
+            {
+                PrintHelp();
+                Environment.Exit(0);
+            }
+
+            if (arg is "-d" or "--days")
+            {
+                if (i + 1 >= args.Length || !int.TryParse(args[i + 1], out var parsedDays))
+                {
+                    Console.WriteLine("Missing or invalid value for --days. Please provide a positive integer.");
+                    PrintHelp();
+                    Environment.Exit(1);
+                }
+
+                days = parsedDays;
+                source = "overridden via command-line";
+                i++;
+            }
+        }
+
+        if (days <= 0 || days > MaxBackfillDays)
+        {
+            Console.WriteLine($"Invalid backfill window '{days}'. Please provide a value between 1 and {MaxBackfillDays} days.");
+            Environment.Exit(1);
+        }
+
+        return (days, source);
+    }
+
+    private static void PrintHelp()
+    {
+        Console.WriteLine("StockHistoryApp options:");
+        Console.WriteLine("  -d, --days <number>   Set the backfill window in days (1 - 3650). Overrides appsettings.json.");
+        Console.WriteLine("  -h, --help            Show this help message and exit.");
     }
 
     private static AppSettings LoadConfiguration(string path)
@@ -93,7 +143,7 @@ public class AppSettings
 {
     public string DatabasePath { get; set; } = "stockhistory.db";
 
-    public int Days { get; set; } = 14;
+    public int Days { get; set; } = Program.DefaultBackfillDays;
 
     public List<string> Tickers { get; set; } = new();
 }
