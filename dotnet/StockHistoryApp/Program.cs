@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.Office.Interop.Excel;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 
 namespace StockHistoryApp;
 
@@ -8,23 +9,93 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        var databasePath = "stockhistory.db";
-        var ticker = "MSFT";
-        var days = 14;
+        var settings = LoadConfiguration("appsettings.json");
+        var databasePath = string.IsNullOrWhiteSpace(settings.DatabasePath)
+            ? "stockhistory.db"
+            : settings.DatabasePath;
 
-        Console.WriteLine($"Running STOCKHISTORY for {ticker} over the last {days} days...");
+        var days = settings.Days > 0 ? settings.Days : 14;
+        var tickers = (settings.Tickers ?? new List<string>())
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim().ToUpperInvariant())
+            .Distinct()
+            .ToList();
+
+        if (tickers.Count == 0)
+        {
+            Console.WriteLine("No valid tickers configured. Please update appsettings.json.");
+            return;
+        }
+
+        Console.WriteLine($"Running STOCKHISTORY for {tickers.Count} tickers over the last {days} days...");
 
         var service = new StockHistoryService();
-        var records = service.GetHistory(ticker, days);
-
-        Console.WriteLine($"Fetched {records.Count} rows from Excel. Persisting to SQLite...");
-
         var repository = new StockHistoryRepository(databasePath);
         repository.Initialize();
-        repository.Save(records);
 
-        Console.WriteLine($"Saved {records.Count} records to {databasePath}.");
+        foreach (var ticker in tickers)
+        {
+            Console.WriteLine($"Processing ticker: {ticker}");
+
+            try
+            {
+                var records = service.GetHistory(ticker, days);
+
+                if (records.Count == 0)
+                {
+                    Console.WriteLine($"No records returned for {ticker}; skipping save.");
+                    continue;
+                }
+
+                Console.WriteLine($"Fetched {records.Count} rows from Excel for {ticker}. Persisting to SQLite...");
+
+                repository.Save(records);
+
+                Console.WriteLine($"Saved {records.Count} records for {ticker} to {databasePath}.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to process ticker {ticker}: {ex.Message}");
+            }
+        }
     }
+
+    private static AppSettings LoadConfiguration(string path)
+    {
+        try
+        {
+            if (!File.Exists(path))
+            {
+                Console.WriteLine($"Configuration file '{path}' not found. Using defaults.");
+                return new AppSettings();
+            }
+
+            var json = File.ReadAllText(path);
+            var settings = JsonSerializer.Deserialize<AppSettings>(json);
+
+            if (settings is null)
+            {
+                Console.WriteLine("Configuration file is empty or invalid. Using defaults.");
+                return new AppSettings();
+            }
+
+            return settings;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load configuration: {ex.Message}. Using defaults.");
+            return new AppSettings();
+        }
+    }
+}
+
+public class AppSettings
+{
+    public string DatabasePath { get; set; } = "stockhistory.db";
+
+    public int Days { get; set; } = 14;
+
+    public List<string> Tickers { get; set; } = new();
 }
 
 public class StockHistoryRepository
@@ -47,6 +118,7 @@ public class StockHistoryRepository
         var command = connection.CreateCommand();
         command.CommandText = @"CREATE TABLE IF NOT EXISTS StockHistory (
             Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Ticker TEXT NOT NULL,
             TradingDay TEXT NOT NULL,
             Open REAL,
             High REAL,
@@ -67,9 +139,10 @@ public class StockHistoryRepository
         foreach (var record in records)
         {
             var insert = connection.CreateCommand();
-            insert.CommandText = @"INSERT INTO StockHistory (TradingDay, Open, High, Low, Close, Volume)
-                VALUES ($TradingDay, $Open, $High, $Low, $Close, $Volume);";
+            insert.CommandText = @"INSERT INTO StockHistory (Ticker, TradingDay, Open, High, Low, Close, Volume)
+                VALUES ($Ticker, $TradingDay, $Open, $High, $Low, $Close, $Volume);";
 
+            insert.Parameters.AddWithValue("$Ticker", record.Ticker);
             insert.Parameters.AddWithValue("$TradingDay", record.TradingDay.ToString("yyyy-MM-dd"));
             insert.Parameters.AddWithValue("$Open", record.Open);
             insert.Parameters.AddWithValue("$High", record.High);
@@ -106,7 +179,7 @@ public class StockHistoryService
             var dataRange = sheet.Range["A1"].CurrentRegion;
             var values = (object[,])dataRange.Value2!;
 
-            return MapRecords(values);
+            return MapRecords(values, ticker);
         }
         finally
         {
@@ -120,7 +193,7 @@ public class StockHistoryService
         }
     }
 
-    private static List<StockRecord> MapRecords(object[,] values)
+    private static List<StockRecord> MapRecords(object[,] values, string ticker)
     {
         var records = new List<StockRecord>();
 
@@ -142,6 +215,7 @@ public class StockHistoryService
 
             records.Add(new StockRecord
             {
+                Ticker = ticker,
                 TradingDay = tradingDay,
                 Open = open,
                 High = high,
@@ -157,6 +231,7 @@ public class StockHistoryService
 
 public class StockRecord
 {
+    public string Ticker { get; set; } = string.Empty;
     public DateTime TradingDay { get; set; }
     public double? Open { get; set; }
     public double? High { get; set; }
