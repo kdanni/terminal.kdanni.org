@@ -10,7 +10,7 @@ CREATE OR REPLACE PROCEDURE upsert_ohlcv_excel_data(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO ohlcv_ecel_data (
+    INSERT INTO ohlcv_excel_data (
         symbol, time,
         open, high, low, close, volume
     ) VALUES (
