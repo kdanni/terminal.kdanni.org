@@ -50,6 +50,7 @@ async function fetchWithFallback({ symbol, exchange, interval, lookback }) {
             console.info(`[ohlc] Waiting ${REQUEST_DELAY_MS}ms before trying the next provider for ${symbol} (${exchange ?? 'GLOBAL'})`);
             await delay(REQUEST_DELAY_MS);
         }
+        await delay(REQUEST_DELAY_MS*2);
     }
 
     return [];
@@ -90,9 +91,10 @@ export async function collectWatchListOhlc({ interval = '1d', lookback = 30 } = 
 
         const isLastEntry = index === watchList.length - 1;
         if (!isLastEntry && REQUEST_DELAY_MS > 0) {
-            console.info(`[ohlc] Waiting ${REQUEST_DELAY_MS}ms before fetching data for the next watch list entry`);
+            // console.info(`[ohlc] Waiting ${REQUEST_DELAY_MS}ms before fetching data for the next watch list entry`);
             await delay(REQUEST_DELAY_MS);
         }
+        await delay(REQUEST_DELAY_MS*2);
     }
 
     console.info('[ohlc] Collection process completed');
