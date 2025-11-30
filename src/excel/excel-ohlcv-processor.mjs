@@ -53,8 +53,9 @@ export async function excelOhlcvProcessor() {
 
     // console.dir(assetDictionary);
 
-
-    const selectOhlcvSql = `SELECT * FROM ${OHLCV_EXCEL_DATA_TABLE} WHERE symbol = $[symbol]`;
+    const timeField = "time AT TIME ZONE 'UTC' AS timeutc, time AT TIME ZONE 'Europe/Budapest' AS timecet";
+    const fieldList = `time, ${timeField}, open, high, low, close, volume`;
+    const selectOhlcvSql = `SELECT ${fieldList} FROM ${OHLCV_EXCEL_DATA_TABLE} WHERE symbol = $[symbol]`;
 
 
     for(const asset of assetList) {
@@ -76,18 +77,22 @@ export async function excelOhlcvProcessor() {
             const symbol = `${assetDictionary[asset].ticker}`;
             const exchange = `${assetDictionary[asset].exchange.name}`;
             const interval = '1d';
-            const time1 = row.time;  // GMT+1
-            const date = new Date(time1);
-            date.setHours(date.getHours() + 1);
-            const time2 = new Date(date); // GMT+2
-            
-            // console.log(symbol, exchange, interval, time1, time2, row.open, row.high, row.low, row.close, row.volume);
+            // const time = row.time;  // local
+            // const timeUtc = row.timeutc; // UTF
+            // const timeCet = row.timecet; // CET
+            const converted = convertToTimeZone(row.timeutc);
+ 
+            // console.log(time, timeUtc, timeCet, converted);
+            // console.log(`${time}`,`${timeUtc}`, `${timeCet}`, `${converted}`);
+            // console.log(`${time.toISOString()}`,`${timeUtc.toISOString()}`, `${timeCet.toISOString()}`, `${converted.toISOString()}`);
+
+            // console.log(symbol, exchange, interval, converted, row.open, row.high, row.low, row.close, row.volume);
             
             await upsertOhlcvRow({
                 symbol, 
                 exchange, 
                 interval, 
-                time: time2.getTime(),
+                time: converted,
                 open: row.open, 
                 high: row.high, 
                 low: row.low, 
@@ -99,4 +104,23 @@ export async function excelOhlcvProcessor() {
 
         console.log('Excel OHLCV -> OHLCV', wl.symbol, wl.exchange, `row count: ${ohlcvResult?.length}`);
     }
+}
+
+function convertToTimeZone(date) {
+    date.setHours(date.getHours() + 6);
+    const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: 'UTC',
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+    const parts = formatter.formatToParts(date);
+    const get = type => parts.find(p => p.type === type).value;
+    return new Date(
+        `${get("year")}-${get("month")}-${get("day")}T${'00'}:${'00'}:${'00'}Z`
+    );
 }
