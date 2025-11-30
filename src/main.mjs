@@ -1,6 +1,7 @@
 import { ingestTwelveDataAssetCatalogs } from './main/twd-asset-catalog.mjs';
 import { ingestTwelveDataExchangeCatalog } from './main/twd-exchange-catalog.mjs';
 import { collectDailyOhlc, collectHourlyOhlc } from './main/ohlc-collect.mjs';
+import { excelOhlcvProcessor } from './excel/excel-ohlcv-processor.mjs';
 
 let commandString = '';
 if (process.argv.length > 2) {
@@ -56,6 +57,8 @@ if (/^no[- ]operation\b/.test(commandString)) {
     ohlcCollectDaily();
 } else if (/^ohlc(?::|[- ])?collect(?::|[- ])?(hourly|1h)\b/.test(commandString)) {
     ohlcCollectHourly();
+} else if (/^ohlc(?::|[- ])?excel\b/.test(commandString)) {
+    ohlcExcelProcessor();
 } else {
     main();
 }
@@ -215,4 +218,12 @@ async function collectBlueChipCrypto() {
     await collectBlueChipCryptoSignals();
 
     setTimeout(() => { process.emit('exit_event'); }, 1000);
+}
+
+async function ohlcExcelProcessor() {
+    const { excelOhlcvProcessor } = await import('./excel/excel-ohlcv-processor.mjs');
+
+    await excelOhlcvProcessor();
+
+    setTimeout(() => { process.emit('exit_event'); }, 1000);    
 }
