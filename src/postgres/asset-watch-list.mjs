@@ -9,6 +9,16 @@ const WATCH_LIST_COLUMNS = `
     updated_at
 `;
 
+const EXCEL_WATCH_LIST_COLUMNS = `
+    id,
+    excel_symbol,
+    symbol,
+    exchange,
+    active,
+    created_at,
+    updated_at
+`;
+
 const WATCH_HISTORY_COLUMNS = `
     id,
     watch_list_id,
@@ -20,6 +30,16 @@ const INSERT_WATCH_LIST_ENTRY = `
     INSERT INTO asset_watch_list (symbol, exchange, active)
     VALUES ($[symbol], $[exchange], $[active])
     RETURNING ${WATCH_LIST_COLUMNS};
+`;
+
+const UPSERT_EXCEL_WATCH_LIST_ENTRY = `
+    INSERT INTO excel_watch_list (symbol, exchange, excel_symbol, active)
+    VALUES ($[symbol], $[exchange], $[excel_symbol], $[active])
+    ON CONFLICT (excel_symbol)
+    DO UPDATE SET
+        active = EXCLUDED.active,
+        updated_at = now()
+    RETURNING ${EXCEL_WATCH_LIST_COLUMNS};
 `;
 
 const SELECT_WATCH_LIST_ENTRY_BY_ID = `
@@ -120,6 +140,21 @@ export async function createAssetWatchListEntry({ symbol, exchange = null, activ
         });
 
         return { entry, historyEntry };
+    });
+}
+
+export async function upsertExcelWatchListEntry({ symbol, excel_symbol, exchange = null, active = true }) {
+    const normalizedSymbol = normalizeSymbol(symbol);
+    const normalizedExchange = normalizeExchange(exchange);
+
+    return db.tx(async tx => {
+        const entry = await tx.one(UPSERT_EXCEL_WATCH_LIST_ENTRY, {
+            symbol: normalizedSymbol,
+            exchange: normalizedExchange,
+            excel_symbol: excel_symbol,
+            active: Boolean(active),
+        });
+        return { entry };
     });
 }
 

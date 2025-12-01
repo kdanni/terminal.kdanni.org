@@ -1,6 +1,6 @@
 import { db } from '../postgres/pgPromise-env-connection.mjs';
 import { upsertOhlcvRow } from '../postgres/ohlcv-data.mjs';
-import { createAssetWatchListEntry, getAssetWatchListEntryBySymbol } from '../postgres/asset-watch-list.mjs';
+import { createAssetWatchListEntry, getAssetWatchListEntryBySymbol, upsertExcelWatchListEntry } from '../postgres/asset-watch-list.mjs';
 
 
 const OHLCV_EXCEL_DATA_TABLE = 'ohlcv_ecel_data'
@@ -48,6 +48,8 @@ export async function excelOhlcvProcessor() {
 
         } else {
             // currency or crypto
+            assetDictionary[asset].exchange = {name: '#N/A', code: '#N/A'};
+            assetDictionary[asset].ticker = `${asset}`;
         }
     }
 
@@ -65,6 +67,7 @@ export async function excelOhlcvProcessor() {
         const wl = {
             symbol: `${assetDictionary[asset].ticker}`, 
             exchange: `${assetDictionary[asset].exchange.name}`, 
+            excel_symbol: `${asset}`,
             active: true
         }
 
@@ -72,6 +75,8 @@ export async function excelOhlcvProcessor() {
         if(!wlAss || wlAss?.length < 1) {
             await createAssetWatchListEntry(wl);
         }
+
+        await upsertExcelWatchListEntry(wl);
 
         for (const row of ohlcvResult) {
             const symbol = `${assetDictionary[asset].ticker}`;
