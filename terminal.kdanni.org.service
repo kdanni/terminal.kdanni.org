@@ -1,0 +1,17 @@
+[Unit]
+Description=terminal.kdanni.org Excel task.
+After=network.target
+
+[Service]
+Type=simple
+User=kiss
+Environment="NODE_OPTIONS=--max-old-space-size=1024"
+WorkingDirectory=/home/kiss/opt/terminal.kdanni.org
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+Restart=always
+RestartSec=10
+# RuntimeMaxSec=36000
+
+[Install]
+WantedBy=multi-user.target
